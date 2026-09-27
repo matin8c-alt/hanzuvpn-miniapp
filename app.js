@@ -10,7 +10,13 @@ function showToast(text){
   const el=$('#toast'); el.textContent=text; el.classList.add('show');
   clearTimeout(window.toastTimer); window.toastTimer=setTimeout(()=>el.classList.remove('show'),2600);
 }
-function openModal(html){ $('#modal-content').innerHTML=html; modal.hidden=false; }
+function openModal(html){
+  const content = String(html ?? '').trim();
+  if(!content) { closeModal(); return; }
+  $('#modal-content').innerHTML=content;
+  modal.hidden=false;
+}
+
 function closeModal(){ modal.hidden=true; }
 function escapeHtml(v){ return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function initData(){ return tg?.initData || ''; }
@@ -190,6 +196,8 @@ document.addEventListener('click',e=>{
 });
 $('#refresh').addEventListener('click',()=>refreshData(true));
 $('#modal-close').addEventListener('click',closeModal);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+modal.hidden=true;
 modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
 
 setupTelegram();
