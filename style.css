@@ -222,3 +222,11 @@ html,body{
 .loader-signature{color:#55b5e7}.loader-ring{border-color:rgba(111,171,204,.16);border-top-color:#38a4df}.loader-text{color:#8fa9bb}.loader-sub{color:#6d92a9}
 .selected-lang{outline:2px solid rgba(72,174,226,.32)}
 @keyframes loaderPulse{50%{filter:drop-shadow(0 0 32px rgba(48,160,222,.34))}}
+
+/* Bottom navigation stability: keep it centered in RTL/LTR Telegram WebView. */
+.bottom{left:0;right:0;margin-inline:auto;transform:none;width:calc(100% - 22px);max-width:688px;direction:ltr;}
+.bottom .nav{direction:rtl;min-width:0;}
+.link-row{display:flex;align-items:stretch;gap:7px;width:100%;direction:ltr;}
+.link-row .link-box{flex:1;min-width:0;}
+.copy-link{flex:0 0 46px;width:46px;min-height:80px;border-radius:10px;background:#e1f4fc;color:#147fad;font-size:18px;border:1px solid #bfe3f3;}
+.copy-link:active{transform:scale(.96)}
