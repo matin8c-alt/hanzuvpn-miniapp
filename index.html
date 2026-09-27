@@ -1,1 +1,95 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>HanzuVPN</title><script src="https://telegram.org/js/telegram-web-app.js"></script><link rel="stylesheet" href="style.css"></head><body><main class="app"><header><div><h1>HanzuVPN</h1><p id="hello">فروش و مدیریت سرویس</p></div><div class="wallet">💰 <span id="balance">0</span> تومان</div></header><nav><button class="tab active" data-page="home">خانه</button><button class="tab" data-page="buy">🛒 خرید</button><button class="tab" data-page="services">📦 سرویس‌ها</button><button class="tab" data-page="walletPage">💰 کیف پول</button></nav><section id="home" class="page active"><div class="hero"><h2>سرویس VPN خودت را انتخاب کن</h2><p>خرید، تمدید و شارژ کیف پول مستقیم داخل Mini App</p><button class="primary" data-go="buy">🛒 خرید سرویس</button></div><div class="card"><h3>قیمت هر گیگ</h3><strong>۳٬۵۰۰ تومان</strong><p>تمام سرویس‌ها ۳۰ روزه هستند.</p></div></section><section id="buy" class="page"><h2>🛒 خرید سرویس</h2><div id="plans" class="grid"></div></section><section id="services" class="page"><h2>📦 سرویس‌های من</h2><div id="servicesList"></div></section><section id="walletPage" class="page"><h2>💰 کیف پول</h2><div class="card"><div class="bigbalance" id="balance2">0 تومان</div><label>مبلغ شارژ</label><input id="chargeAmount" type="number" min="10000" placeholder="مثلاً 50000"><button class="primary" id="chargeBtn">💳 شارژ و ارسال رسید</button><p class="muted">حداقل شارژ ۱۰٬۰۰۰ تومان</p></div></section><div id="modal" class="modal hidden"><div class="modalbox"><button class="close" id="close">×</button><h3 id="modalTitle">پرداخت</h3><p id="modalText"></p><input id="receipt" type="file" accept="image/*"><button class="primary" id="receiptBtn">📸 ارسال رسید</button></div></div><div id="toast"></div></main><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#071426">
+  <meta name="color-scheme" content="dark">
+  <title>HanzuVPN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div id="loader" class="loader-screen">
+    <div class="loader-glow"></div>
+    <img src="logo.png" class="loader-logo" alt="HANZU">
+    <div class="loader-name">HANZU</div>
+    <div class="loader-signature">hanzu</div>
+    <div class="loader-ring"></div>
+    <div class="loader-text">در حال بارگذاری...</div>
+    <div class="loader-sub">FAST • SECURE • GLOBAL</div>
+  </div>
+
+  <div class="bg-orb orb-one"></div>
+  <div class="bg-orb orb-two"></div>
+  <main class="app" id="app" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <img src="logo.png" alt="HanzuVPN" class="brand-logo">
+        <div><strong>HanzuVPN</strong><span id="hello">پنل کاربری</span></div>
+      </div>
+      <button class="icon-btn" id="refresh" aria-label="بروزرسانی">↻</button>
+    </header>
+
+    <section class="hero glass">
+      <div>
+        <span class="eyebrow">موجودی کیف پول</span>
+        <div class="balance" id="balance">۰ تومان</div>
+        <small id="tg-user">کاربر HanzuVPN</small>
+      </div>
+      <button class="primary" data-action="wallet">＋ شارژ کیف پول</button>
+    </section>
+
+    <section class="section" data-section="home">
+      <div class="section-head"><h2>خرید اشتراک</h2><span>۳۰ روزه</span></div>
+      <div class="plans" id="plans"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>دسترسی سریع</h2></div>
+      <div class="quick-grid">
+        <button class="quick glass" data-action="services"><span>📊</span><b>سرویس‌های من</b><small>مدیریت و تمدید</small></button>
+        <button class="quick glass" data-action="wallet"><span>💰</span><b>کیف پول</b><small>موجودی و تراکنش‌ها</small></button>
+        <button class="quick glass" data-action="help"><span>📚</span><b>آموزش اتصال</b><small>Android / iPhone / Windows</small></button>
+        <button class="quick glass" data-action="support"><span>👨🏻‍💻</span><b>پشتیبانی</b><small>@ByHxnzu</small></button>
+      </div>
+    </section>
+
+    <section class="section" id="services-panel">
+      <div class="section-head"><h2>سرویس‌های من</h2><button class="link-btn" data-action="services">مشاهده همه</button></div>
+      <div class="service glass" id="service">
+        <div class="service-icon">⌁</div>
+        <div><strong>هنوز سرویسی ندارید</strong><p>بعد از خرید، سرویس‌های فعال اینجا نمایش داده می‌شوند.</p></div>
+      </div>
+    </section>
+
+    <section class="section info-section" id="help-panel">
+      <div class="section-head"><h2>راهنمای اتصال</h2></div>
+      <div class="os-grid">
+        <button class="os-card glass" data-action="android"><span>🤖</span><b>Android</b><small>Hiddify • V2Box • v2rayNG</small></button>
+        <button class="os-card glass" data-action="ios"><span></span><b>iPhone / iOS</b><small>Hiddify • V2Box • Streisand</small></button>
+        <button class="os-card glass" data-action="windows"><span>▣</span><b>Windows</b><small>Hiddify • v2rayN</small></button>
+      </div>
+    </section>
+
+    <nav class="bottom glass" aria-label="منوی اصلی">
+      <button class="nav active" data-page="home"><span>⌂</span><small>خانه</small></button>
+      <button class="nav" data-page="services"><span>◈</span><small>سرویس‌ها</small></button>
+      <button class="nav" data-page="wallet"><span>◉</span><small>کیف پول</small></button>
+      <button class="nav" data-page="help"><span>?</span><small>آموزش</small></button>
+    </nav>
+  </main>
+
+  <div class="modal-backdrop" id="modal" hidden>
+    <div class="modal glass" role="dialog" aria-modal="true">
+      <button class="modal-close" id="modal-close">×</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
