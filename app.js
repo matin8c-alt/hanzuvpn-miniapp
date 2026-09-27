@@ -16,8 +16,11 @@ function escapeHtml(v){ return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&
 function initData(){ return tg?.initData || ''; }
 
 async function api(path, options={}){
-  const headers = {'Content-Type':'application/json','X-Telegram-Init-Data':initData(), ...(options.headers||{})};
-  const res = await fetch(API_BASE + path, {...options, headers});
+  const rawInit = initData();
+  const headers = {'Content-Type':'application/json','X-Telegram-Init-Data':rawInit, ...(options.headers||{})};
+  const sep = path.includes('?') ? '&' : '?';
+  const url = rawInit ? (API_BASE + path + sep + 'initData=' + encodeURIComponent(rawInit)) : (API_BASE + path);
+  const res = await fetch(url, {...options, headers});
   let data = {};
   try { data = await res.json(); } catch(e) { throw new Error('پاسخ نامعتبر از سرور دریافت شد.'); }
   if(!res.ok || data.ok === false) throw new Error(data.error || 'عملیات ناموفق بود.');
@@ -25,7 +28,7 @@ async function api(path, options={}){
 }
 
 function renderPlans(){
-  const plans = (state.plans?.length ? state.plans : [
+  const plans = (state.plans?.length ? state.plans.map(x=>({...x,gb:x.gb ?? x.volume})) : [
     {gb:1,price:3500},{gb:10,price:35000},{gb:15,price:52500},{gb:20,price:70000},
     {gb:30,price:105000},{gb:40,price:140000},{gb:50,price:175000},{gb:100,price:350000}
   ]);
@@ -59,7 +62,7 @@ function renderServices(){
 }
 
 function buyConfirm(gb){
-  const p = state.plans.find(x=>Number(x.gb)===Number(gb)) || {gb,price:gb*3500};
+  const p = state.plans.find(x=>Number(x.gb ?? x.volume)===Number(gb)) || {gb,price:gb*3500};
   openModal(`<h2>🛒 خرید ${escapeHtml(p.gb)} گیگ</h2>
     <p>اعتبار: ۳۰ روز</p><p><b>مبلغ: ${money(p.price)}</b></p><p>موجودی کیف پول: <b>${money(state.balance)}</b></p>
     <button class="modal-action" onclick="doBuy(${Number(p.gb)})">پرداخت از کیف پول</button>`);
@@ -68,7 +71,7 @@ function buyConfirm(gb){
 window.doBuy = async gb => {
   try{
     closeModal(); showToast('در حال ثبت خرید...');
-    const data = await api('/api/buy',{method:'POST',body:JSON.stringify({gb})});
+    const data = await api('/api/buy',{method:'POST',body:JSON.stringify({volume:String(gb)})});
     state.balance = Number(data.balance ?? data.new_balance ?? state.balance);
     if(data.services) state.services = data.services;
     updateHeader(); renderServices();
@@ -97,6 +100,7 @@ window.createCharge=async()=>{
     const data = await api('/api/charge',{method:'POST',body:JSON.stringify({amount})});
     const card = data.card || data.card_number || data.payment_card || '';
     const orderId = data.order_id ?? data.order ?? '';
+    state.chargeAmount = amount;
     openModal(`<h2>💳 پرداخت شارژ</h2><p>مبلغ: <b>${money(amount)}</b></p>
       <p>شماره سفارش: <b>#${escapeHtml(orderId)}</b></p>
       ${card ? `<p>💳 شماره کارت:</p><div style="direction:ltr;text-align:center;font-size:18px;font-weight:800;letter-spacing:1px;padding:12px;border:1px solid var(--line);border-radius:12px">${escapeHtml(card)}</div>` : '<p>شماره کارت در پاسخ سرور ارسال نشده است.</p>'}
@@ -115,7 +119,7 @@ window.sendReceipt=async orderId=>{
     const reader = new FileReader();
     reader.onload = async () => {
       try{
-        const result = await api('/api/charge-receipt',{method:'POST',body:JSON.stringify({order_id:orderId,image:String(reader.result),filename:file.name})});
+        const result = await api('/api/charge-receipt',{method:'POST',body:JSON.stringify({order_id:orderId,amount:Number(state.chargeAmount||0),image:String(reader.result),filename:file.name})});
         openModal(`<h2>✅ رسید ارسال شد</h2><p>رسید سفارش #${escapeHtml(result.order_id ?? orderId)} برای مدیریت ارسال شد.</p><p>بعد از تأیید، موجودی کیف پولت خودکار افزایش پیدا می‌کند.</p><button class="modal-action" onclick="refreshData()">بروزرسانی موجودی</button>`);
       }catch(e){ openModal(`<h2>❌ ارسال رسید ناموفق بود</h2><p>${escapeHtml(e.message)}</p><button class="modal-action" onclick="closeModal()">بستن</button>`); }
     };
