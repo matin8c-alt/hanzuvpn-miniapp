@@ -199,9 +199,3 @@ setupTelegram();
 refreshData(false);
 setTimeout(()=>{$('#loader').classList.add('hide');$('#app').hidden=false},1100);
 
-
-// STARTUP
-setupTelegram();
-renderPlans();
-renderServices();
-refreshData(false);
