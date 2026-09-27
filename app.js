@@ -1,219 +1,48 @@
 const tg = window.Telegram?.WebApp;
 const API_BASE = 'https://hanzuvpn-bot-production.up.railway.app';
-
 const $ = s => document.querySelector(s);
-const money = n => new Intl.NumberFormat('fa-IR').format(Number(n || 0)) + ' تومان';
+let state = { balance: 0, plans: [], services: [], history: [], user: null, support: 'https://t.me/ByHxnzu', language: 'fa' };
 const modal = $('#modal');
-let state = { balance: 0, plans: [], services: [], history: [], user: null, support: 'https://t.me/ByHxnzu' };
+const LANG_NAMES = {fa:'🇮🇷 فارسی', ku:'🟢 کوردی', en:'🇬🇧 English'};
 
-function showToast(text){
-  const el=$('#toast'); el.textContent=text; el.classList.add('show');
-  clearTimeout(window.toastTimer); window.toastTimer=setTimeout(()=>el.classList.remove('show'),2600);
-}
-function openModal(html){ $('#modal-content').innerHTML=html; modal.hidden=false; }
-function closeModal(){ modal.hidden=true; }
-function escapeHtml(v){ return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
-function initData(){ return tg?.initData || ''; }
-
-async function api(path, options={}){
-  const rawInit = initData();
-  const headers = {'Content-Type':'application/json','X-Telegram-Init-Data':rawInit, ...(options.headers||{})};
-  const sep = path.includes('?') ? '&' : '?';
-  const url = rawInit ? (API_BASE + path + sep + 'initData=' + encodeURIComponent(rawInit)) : (API_BASE + path);
-  const res = await fetch(url, {...options, headers});
-  let data = {};
-  try { data = await res.json(); } catch(e) { throw new Error('پاسخ نامعتبر از سرور دریافت شد.'); }
-  if(!res.ok || data.ok === false) throw new Error(data.error || 'عملیات ناموفق بود.');
-  return data;
-}
-
-function renderPlans(){
-  const plans = (state.plans?.length ? state.plans.map(x=>({...x,gb:x.gb ?? x.volume})) : [
-    {gb:1,price:3500},{gb:10,price:35000},{gb:15,price:52500},{gb:20,price:70000},
-    {gb:30,price:105000},{gb:40,price:140000},{gb:50,price:175000},{gb:100,price:350000}
-  ]);
-  $('#plans').innerHTML = plans.map(p=>`
-    <article class="plan glass ${[10,30].includes(Number(p.gb))?'hot':''}">
-      ${[10,30].includes(Number(p.gb))?'<span class="badge">محبوب</span>':''}
-      <h3>${escapeHtml(p.gb)} گیگ</h3><p>اعتبار ۳۰ روزه</p>
-      <div class="price">${money(p.price)}</div>
-      <button class="buy" data-buy="${escapeHtml(p.gb)}">انتخاب و خرید</button>
-    </article>`).join('');
-  document.querySelectorAll('[data-buy]').forEach(b=>b.addEventListener('click',()=>buyConfirm(Number(b.dataset.buy))));
-}
-
-function updateHeader(){
-  $('#balance').textContent = money(state.balance);
-  if(state.user){
-    const name = [state.user.first_name].filter(Boolean).join(' ');
-    $('#hello').textContent = name || 'پنل کاربری';
-    $('#tg-user').textContent = state.user.username ? '@'+state.user.username : `شناسه: ${state.user.id}`;
-  }
-}
-
-function renderServices(){
-  const box = $('#service');
-  if(!state.services?.length){
-    box.innerHTML = '<div class="service-icon">⌁</div><div><strong>هنوز سرویسی ندارید</strong><p>بعد از خرید، سرویس‌های فعال اینجا نمایش داده می‌شوند.</p></div>';
-    return;
-  }
-  const s = state.services[0];
-  box.innerHTML = `<div class="service-icon">✓</div><div><strong>${escapeHtml(s.volume)} گیگ — سفارش #${escapeHtml(s.id)}</strong><p>انقضا: ${escapeHtml(s.expires_at || '-')}</p><button class="buy" style="margin-top:8px" onclick="showServices()">مدیریت سرویس‌ها</button></div>`;
-}
-
-function buyConfirm(gb){
-  const p = state.plans.find(x=>Number(x.gb ?? x.volume)===Number(gb)) || {gb,price:gb*3500};
-  openModal(`<h2>🛒 خرید ${escapeHtml(p.gb)} گیگ</h2>
-    <p>اعتبار: ۳۰ روز</p><p><b>مبلغ: ${money(p.price)}</b></p><p>موجودی کیف پول: <b>${money(state.balance)}</b></p>
-    <button class="modal-action" onclick="doBuy(${Number(p.gb)})">پرداخت از کیف پول</button>`);
-}
-
-window.doBuy = async gb => {
-  try{
-    closeModal(); showToast('در حال ثبت خرید...');
-    const data = await api('/api/buy',{method:'POST',body:JSON.stringify({volume:String(gb)})});
-    state.balance = Number(data.balance ?? data.new_balance ?? state.balance);
-    if(data.services) state.services = data.services;
-    updateHeader(); renderServices();
-    let extra = '';
-    if(data.link) extra = `<p><b>لینک اشتراک:</b></p><textarea readonly style="width:100%;min-height:80px;background:rgba(0,0,0,.2);color:white;border:1px solid var(--line);border-radius:10px;padding:8px;direction:ltr">${escapeHtml(data.link)}</textarea>`;
-    openModal(`<h2>✅ خرید موفق</h2><p>سفارش #${escapeHtml(data.order_id ?? '')} ثبت و سرویس تحویل شد.</p><p>موجودی جدید: <b>${money(state.balance)}</b></p>${extra}<button class="modal-action" onclick="closeModal()">باشه</button>`);
-  }catch(e){
-    const code = String(e?.message || 'unknown_error');
-    const messages = {
-      insufficient_balance: 'موجودی کیف پول برای این خرید کافی نیست.',
-      no_stock: 'این حجم فعلاً موجود نیست. لطفاً حجم دیگری را انتخاب کنید.',
-      unauthorized: 'اتصال تلگرام به مینی‌اپ معتبر نیست. مینی‌اپ را از دکمه رسمی ربات باز کنید.',
-      invalid_volume: 'حجم انتخاب‌شده معتبر نیست.',
-      service_not_found: 'سرویس موردنظر پیدا نشد.',
-    };
-    const msg = messages[code] || code;
-    openModal(`<h2>❌ خرید انجام نشد</h2><p>${escapeHtml(msg)}</p><small style="display:block;color:#7189a3;direction:ltr;margin-top:8px">${escapeHtml(code)}</small><button class="modal-action" onclick="closeModal()">بستن</button>`);
-  }
+const I18N = {
+  fa:{dir:'rtl',hello:'پنل کاربری',wallet:'کیف پول',balance:'موجودی کیف پول',charge:'شارژ کیف پول',buy:'خرید اشتراک',days:'۳۰ روزه',quick:'دسترسی سریع',services:'سرویس‌های من',manage:'مدیریت و تمدید',help:'آموزش اتصال',support:'پشتیبانی',manage_sub:'مدیریت و تمدید',wallet_sub:'موجودی و تراکنش‌ها',help_sub:'Android / iPhone / Windows',support_sub:'@ByHxnzu',no_service:'هنوز سرویسی ندارید',no_service_sub:'بعد از خرید، سرویس‌های فعال اینجا نمایش داده می‌شوند.',choose:'انتخاب و خرید',popular:'محبوب',valid:'اعتبار ۳۰ روزه',buy_title:'🛒 خرید',amount:'مبلغ',wallet_balance:'موجودی کیف پول',pay_wallet:'پرداخت از کیف پول',buying:'در حال ثبت خرید...',buy_ok:'خرید موفق',order:'سفارش',delivered:'ثبت و سرویس تحویل شد.',new_balance:'موجودی جدید',ok:'باشه',buy_fail:'خرید انجام نشد',close:'بستن',insufficient:'موجودی کیف پول شما کافی نیست.',please_charge:'لطفاً کیف پول خود را شارژ کنید.',go_charge:'💳 شارژ کیف پول',copy:'کپی',copied:'شماره کارت کپی شد.',charge_title:'➕ شارژ کیف پول',min:'حداقل مبلغ شارژ',continue:'ادامه',creating:'در حال ایجاد درخواست شارژ...',payment:'💳 پرداخت شارژ',order_no:'شماره سفارش',card:'شماره کارت',receipt_hint:'بعد از واریز، عکس رسید را همینجا انتخاب و ارسال کن.',send_receipt:'📸 ارسال رسید',pick_receipt:'اول عکس رسید را انتخاب کن',invalid_order:'شماره سفارش نامعتبر است',sending:'در حال ارسال رسید...',receipt_ok:'رسید ارسال شد',receipt_sent:'رسید برای مدیریت ارسال شد.',after_approve:'بعد از تأیید، موجودی کیف پولت خودکار افزایش پیدا می‌کند.',refresh_balance:'بروزرسانی موجودی',receipt_fail:'ارسال رسید ناموفق بود',wallet_title:'💰 کیف پول',current:'موجودی فعلی',transactions:'📜 تراکنش‌ها',no_tx:'هنوز تراکنشی ثبت نشده است.',history_empty:'هنوز تراکنشی ثبت نشده است.',services_title:'📦 سرویس‌های من',no_services:'سرویسی برای نمایش وجود ندارد.',renew:'🔄 تمدید با کیف پول',renewing:'در حال تمدید...',renew_ok:'تمدید موفق',renew_done:'سرویس با موفقیت تمدید شد.',renew_fail:'تمدید انجام نشد',link:'لینک اشتراک',guide:'راهنمای اتصال',android:'Android',ios:'iPhone / iOS',windows:'Windows',close2:'بستن',refresh:'اطلاعات بروزرسانی شد',connection:'اتصال',support_open:'باز کردن پشتیبانی',invalid_response:'پاسخ نامعتبر از سرور دریافت شد.',network:'اتصال به سرور برقرار نشد',not_enough:'موجودی کافی نیست',no_stock:'این حجم فعلاً موجود نیست.'},
+  en:{dir:'ltr',hello:'User Panel',wallet:'Wallet',balance:'Wallet balance',charge:'Charge Wallet',buy:'Buy Subscription',days:'30 days',quick:'Quick Access',services:'My Services',manage:'Manage & renew',help:'Connection Guide',support:'Support',manage_sub:'Manage & renew',wallet_sub:'Balance & transactions',help_sub:'Android / iPhone / Windows',support_sub:'@ByHxnzu',no_service:'No service yet',no_service_sub:'Your active services will appear here after purchase.',choose:'Choose & Buy',popular:'Popular',valid:'30-day validity',buy_title:'🛒 Purchase',amount:'Amount',wallet_balance:'Wallet balance',pay_wallet:'Pay from Wallet',buying:'Processing purchase...',buy_ok:'Purchase successful',order:'Order',delivered:'registered and service delivered.',new_balance:'New balance',ok:'OK',buy_fail:'Purchase failed',close:'Close',insufficient:'Your wallet balance is insufficient.',please_charge:'Please charge your wallet first.',go_charge:'💳 Charge Wallet',copy:'Copy',copied:'Card number copied.',charge_title:'➕ Charge Wallet',min:'Minimum charge',continue:'Continue',creating:'Creating charge request...',payment:'💳 Wallet Charge',order_no:'Order number',card:'Card number',receipt_hint:'After payment, select and send the receipt image here.',send_receipt:'📸 Send Receipt',pick_receipt:'Please select the receipt image first',invalid_order:'Invalid order number',sending:'Sending receipt...',receipt_ok:'Receipt sent',receipt_sent:'The receipt was sent to management.',after_approve:'After approval, your wallet balance will be increased automatically.',refresh_balance:'Refresh Balance',receipt_fail:'Receipt upload failed',wallet_title:'💰 Wallet',current:'Current balance',transactions:'📜 Transactions',no_tx:'No transactions yet.',history_empty:'No transactions yet.',services_title:'📦 My Services',no_services:'No service to display.',renew:'🔄 Renew with Wallet',renewing:'Renewing...',renew_ok:'Renewal successful',renew_done:'Service renewed successfully.',renew_fail:'Renewal failed',link:'Subscription link',guide:'Connection Guide',android:'Android',ios:'iPhone / iOS',windows:'Windows',close2:'Close',refresh:'Information updated',connection:'Connection',support_open:'Open Support',invalid_response:'Invalid response from server.',network:'Could not connect to server',not_enough:'Insufficient balance',no_stock:'This volume is currently out of stock.'},
+  ku:{dir:'rtl',hello:'پەڕەی بەکارهێنەر',wallet:'جزدان',balance:'باڵانسی جزدان',charge:'شارژکردنی جزدان',buy:'کڕینی خزمەتگوزاری',days:'۳۰ ڕۆژ',quick:'دەستگەیشتنی خێرا',services:'خزمەتگوزارییەکانم',manage:'بەڕێوەبردن و نوێکردنەوە',help:'ڕێنمایی بەستن',support:'پشتگیری',manage_sub:'بەڕێوەبردن و نوێکردنەوە',wallet_sub:'باڵانس و مامەڵەکان',help_sub:'Android / iPhone / Windows',support_sub:'@ByHxnzu',no_service:'هێشتا خزمەتگوزاری نییە',no_service_sub:'دوای کڕین، خزمەتگوزارییە چالاکەکان لێرە دەردەکەون.',choose:'هەڵبژاردن و کڕین',popular:'بەناوبانگ',valid:'ماوەی ۳۰ ڕۆژ',buy_title:'🛒 کڕین',amount:'بڕ',wallet_balance:'باڵانسی جزدان',pay_wallet:'پارەدان لە جزدان',buying:'کڕین تۆمار دەکرێت...',buy_ok:'کڕین سەرکەوتوو بوو',order:'داواکاری',delivered:'تۆمار کرا و خزمەتگوزاری درا.',new_balance:'باڵانسی نوێ',ok:'باشە',buy_fail:'کڕین سەرکەوتوو نەبوو',close:'داخستن',insufficient:'باڵانسی جزدان بەس نییە.',please_charge:'تکایە سەرەتا جزدانەکەت شارژ بکە.',go_charge:'💳 شارژکردنی جزدان',copy:'کۆپی',copied:'ژمارەی کارت کۆپی کرا.',charge_title:'➕ شارژکردنی جزدان',min:'کەمترین بڕی شارژ',continue:'بەردەوام بە',creating:'داواکاری شارژ دروست دەکرێت...',payment:'💳 پارەدانی شارژ',order_no:'ژمارەی داواکاری',card:'ژمارەی کارت',receipt_hint:'دوای پارەدان، وێنەی پسوڵە لێرە هەڵبژێرە و بنێرە.',send_receipt:'📸 ناردنی پسوڵە',pick_receipt:'تکایە سەرەتا وێنەی پسوڵە هەڵبژێرە',invalid_order:'ژمارەی داواکاری نادروستە',sending:'پسوڵە دەنێردرێت...',receipt_ok:'پسوڵە نێردرا',receipt_sent:'پسوڵە بۆ بەڕێوەبەرایەتی نێردرا.',after_approve:'دوای پشتڕاستکردنەوە، باڵانسی جزدان خۆکار زیاد دەکرێت.',refresh_balance:'نوێکردنەوەی باڵانس',receipt_fail:'ناردنی پسوڵە سەرکەوتوو نەبوو',wallet_title:'💰 جزدان',current:'باڵانسی ئێستا',transactions:'📜 مامەڵەکان',no_tx:'هێشتا مامەڵەیەک نییە.',history_empty:'هێشتا مامەڵەیەک نییە.',services_title:'📦 خزمەتگوزارییەکانم',no_services:'هیچ خزمەتگوزارییەک نییە.',renew:'🔄 نوێکردنەوە لەگەڵ جزدان',renewing:'نوێ دەکرێتەوە...',renew_ok:'نوێکردنەوە سەرکەوتوو بوو',renew_done:'خزمەتگوزاری بە سەرکەوتوویی نوێکرایەوە.',renew_fail:'نوێکردنەوە سەرکەوتوو نەبوو',link:'بەستەری بەشداریکردن',guide:'ڕێنمایی بەستن',android:'Android',ios:'iPhone / iOS',windows:'Windows',close2:'داخستن',refresh:'زانیاری نوێکرایەوە',connection:'بەستن',support_open:'کردنەوەی پشتگیری',invalid_response:'وەڵامی نادروست لە سێرڤەرەوە.',network:'پەیوەندی بە سێرڤەرەوە نەکرا',not_enough:'باڵانس بەس نییە',no_stock:'ئەم قەبارەیە ئێستا بەردەست نییە.'}
 };
-
-function walletModal(){
-  const history = (state.history||[]).slice(0,10).map(x=>`<div style="padding:8px 0;border-bottom:1px solid var(--line);font-size:10px">${Number(x.amount)>=0?'🟢':'🔴'} ${money(Math.abs(Number(x.amount)))} — ${escapeHtml(x.description || x.type || '')}<br><span style="color:var(--muted)">${escapeHtml(x.created_at || '')}</span></div>`).join('') || '<p>هنوز تراکنشی ثبت نشده است.</p>';
-  openModal(`<h2>💰 کیف پول</h2><p>موجودی فعلی: <b>${money(state.balance)}</b></p>
-    <button class="modal-action" onclick="openCharge()">＋ شارژ کیف پول</button>
-    <h3 style="font-size:13px;margin-top:18px">📜 تراکنش‌ها</h3>${history}`);
-}
-
-window.openCharge=()=>openModal(`<h2>➕ شارژ کیف پول</h2><p>حداقل مبلغ شارژ: ۱۰,۰۰۰ تومان</p>
-  <input id="charge-amount" inputmode="numeric" type="number" min="10000" placeholder="مبلغ به تومان" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.2);color:white;box-sizing:border-box">
-  <button class="modal-action" onclick="createCharge()">ادامه</button>`);
-
-window.createCharge=async()=>{
-  const amount = Number($('#charge-amount')?.value || 0);
-  if(amount < 10000){ showToast('حداقل شارژ ۱۰,۰۰۰ تومان است'); return; }
-  try{
-    showToast('در حال ایجاد درخواست شارژ...');
-    const data = await api('/api/charge',{method:'POST',body:JSON.stringify({amount})});
-    const card = data.card || data.card_number || data.payment_card || '';
-    const orderId = data.order_id ?? data.order ?? '';
-    state.chargeAmount = amount;
-    openModal(`<h2>💳 پرداخت شارژ</h2><p>مبلغ: <b>${money(amount)}</b></p>
-      <p>شماره سفارش: <b>#${escapeHtml(orderId)}</b></p>
-      ${card ? `<p>💳 شماره کارت:</p><div style="direction:ltr;text-align:center;font-size:18px;font-weight:800;letter-spacing:1px;padding:12px;border:1px solid var(--line);border-radius:12px">${escapeHtml(card)}</div>` : '<p>شماره کارت در پاسخ سرور ارسال نشده است.</p>'}
-      <p style="color:var(--muted);font-size:10px">بعد از واریز، عکس رسید را همینجا انتخاب و ارسال کن.</p>
-      <input id="receipt-file" type="file" accept="image/*" style="width:100%;margin-top:8px">
-      <button class="modal-action" onclick="sendReceipt(${Number(orderId)||0})">📸 ارسال رسید</button>`);
-  }catch(e){ openModal(`<h2>❌ خطا</h2><p>${escapeHtml(e.message)}</p><button class="modal-action" onclick="closeModal()">بستن</button>`); }
-};
-
-window.sendReceipt=async orderId=>{
-  const file = $('#receipt-file')?.files?.[0];
-  if(!file){ showToast('اول عکس رسید را انتخاب کن'); return; }
-  if(!orderId){ showToast('شماره سفارش نامعتبر است'); return; }
-  try{
-    showToast('در حال ارسال رسید...');
-    const reader = new FileReader();
-    reader.onload = async () => {
-      try{
-        const result = await api('/api/charge-receipt',{method:'POST',body:JSON.stringify({order_id:orderId,amount:Number(state.chargeAmount||0),image:String(reader.result),filename:file.name})});
-        openModal(`<h2>✅ رسید ارسال شد</h2><p>رسید سفارش #${escapeHtml(result.order_id ?? orderId)} برای مدیریت ارسال شد.</p><p>بعد از تأیید، موجودی کیف پولت خودکار افزایش پیدا می‌کند.</p><button class="modal-action" onclick="refreshData()">بروزرسانی موجودی</button>`);
-      }catch(e){ openModal(`<h2>❌ ارسال رسید ناموفق بود</h2><p>${escapeHtml(e.message)}</p><button class="modal-action" onclick="closeModal()">بستن</button>`); }
-    };
-    reader.readAsDataURL(file);
-  }catch(e){ showToast(e.message); }
-};
-
-async function showServices(){
-  try{
-    const data = await api('/api/services'); state.services=data.services||[]; renderServices();
-    if(!state.services.length){ openModal('<h2>📦 سرویس‌های من</h2><p>سرویسی برای نمایش وجود ندارد.</p>'); return; }
-    const list=state.services.map(s=>`<div class="glass" style="padding:13px;border-radius:16px;margin-bottom:9px"><b>📦 ${escapeHtml(s.volume)} گیگ</b><p style="font-size:10px;color:var(--muted)">سفارش #${escapeHtml(s.id)}<br>انقضا: ${escapeHtml(s.expires_at||'-')}</p>${s.link?`<textarea readonly style="width:100%;min-height:70px;background:rgba(0,0,0,.2);color:white;border:1px solid var(--line);border-radius:10px;padding:8px;direction:ltr;box-sizing:border-box">${escapeHtml(s.link)}</textarea>`:''}<button class="modal-action" onclick="renewService(${Number(s.id)})">🔄 تمدید با کیف پول</button></div>`).join('');
-    openModal(`<h2>📦 سرویس‌های من</h2>${list}`);
-  }catch(e){ openModal(`<h2>❌ خطا</h2><p>${escapeHtml(e.message)}</p>`); }
-}
+function L(k){ return (I18N[state.language]||I18N.fa)[k] || I18N.fa[k] || k; }
+const money = n => new Intl.NumberFormat(state.language==='en'?'en-US':'fa-IR').format(Number(n||0)) + (state.language==='en'?' Toman':' تومان');
+function showToast(text){const el=$('#toast');el.textContent=text;el.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>el.classList.remove('show'),2600);}
+function openModal(html){$('#modal-content').innerHTML=html;modal.hidden=false;}
+function closeModal(){modal.hidden=true;}
+function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function initData(){return tg?.initData||'';}
+async function api(path,options={}){const rawInit=initData();const headers={'Content-Type':'application/json','X-Telegram-Init-Data':rawInit,...(options.headers||{})};const sep=path.includes('?')?'&':'?';const url=rawInit?(API_BASE+path+sep+'initData='+encodeURIComponent(rawInit)):(API_BASE+path);const res=await fetch(url,{...options,headers});let data={};try{data=await res.json();}catch(e){throw new Error(L('invalid_response'));}if(!res.ok||data.ok===false)throw new Error(data.error||L('network'));return data;}
+function errorText(err){const e=String(err?.message||err||'');if(e==='insufficient_balance')return L('insufficient')+' '+L('please_charge');if(e==='no_stock')return L('no_stock');if(e==='invalid_volume')return L('buy_fail');if(e==='min_charge')return L('min')+': ۱۰,۰۰۰ تومان';if(e==='unauthorized')return L('network');if(e==='charge_order_not_found')return L('invalid_order');if(e==='invalid_language')return L('network');return e;}
+function applyLanguage(){const i=I18N[state.language]||I18N.fa;document.documentElement.lang=state.language;document.documentElement.dir=i.dir;$('#hello').textContent=(state.user?.first_name||L('hello'));$('#tg-user').textContent=state.user?.username?'@'+state.user.username:(state.user?.id?`ID: ${state.user.id}`:'HanzuVPN');$('.eyebrow').textContent=L('balance');document.querySelector('[data-action="wallet"]')?.replaceChildren(document.createTextNode('＋ '+L('charge')));const heads=document.querySelectorAll('.section-head h2');if(heads[0])heads[0].textContent=L('buy');if(heads[1])heads[1].textContent=L('quick');if(heads[2])heads[2].textContent=L('services');const quick=document.querySelectorAll('.quick');if(quick.length>=4){quick[0].querySelector('b').textContent=L('services');quick[0].querySelector('small').textContent=L('manage');quick[1].querySelector('b').textContent=L('wallet');quick[1].querySelector('small').textContent=L('wallet_sub');quick[2].querySelector('b').textContent=L('help');quick[2].querySelector('small').textContent=L('help_sub');quick[3].querySelector('b').textContent=L('support');quick[3].querySelector('small').textContent=L('support_sub');}const os=document.querySelectorAll('.os-card');if(os.length>=3){os[0].querySelector('b').textContent=L('android');os[1].querySelector('b').textContent=L('ios');os[2].querySelector('b').textContent=L('windows');}const hp=document.querySelector('#help-panel .section-head h2');if(hp)hp.textContent=L('guide');document.querySelectorAll('.nav small')[0].textContent=state.language==='en'?'Home':'خانه';document.querySelectorAll('.nav small')[1].textContent=L('services');document.querySelectorAll('.nav small')[2].textContent=L('wallet');document.querySelectorAll('.nav small')[3].textContent=L('help');}
+function renderPlans(){const plans=state.plans?.length?state.plans.map(x=>({...x,gb:x.gb??x.volume})):[{gb:1,price:3500},{gb:10,price:35000},{gb:15,price:52500},{gb:20,price:70000},{gb:30,price:105000},{gb:40,price:140000},{gb:50,price:175000},{gb:100,price:350000}];$('#plans').innerHTML=plans.map(p=>`<article class="plan glass ${[10,30].includes(Number(p.gb))?'hot':''}">${[10,30].includes(Number(p.gb))?`<span class="badge">${L('popular')}</span>`:''}<h3>${escapeHtml(p.gb)} ${state.language==='en'?'GB':'گیگ'}</h3><p>${L('valid')}</p><div class="price">${money(p.price)}</div><button class="buy" data-buy="${escapeHtml(p.gb)}">${L('choose')}</button></article>`).join('');document.querySelectorAll('[data-buy]').forEach(b=>b.addEventListener('click',()=>buyConfirm(Number(b.dataset.buy))));}
+function updateHeader(){$('#balance').textContent=money(state.balance);applyLanguage();}
+function renderServices(){const box=$('#service');if(!state.services?.length){box.innerHTML=`<div class="service-icon">⌁</div><div><strong>${L('no_service')}</strong><p>${L('no_service_sub')}</p></div>`;return;}const s=state.services[0];box.innerHTML=`<div class="service-icon">✓</div><div><strong>${escapeHtml(s.volume)} ${state.language==='en'?'GB':'گیگ'} — ${L('order')} #${escapeHtml(s.id)}</strong><p>${state.language==='en'?'Expires':'انقضا'}: ${escapeHtml(s.expires_at||'-')}</p><button class="buy" style="margin-top:8px" onclick="showServices()">${L('manage')}</button></div>`;}
+function buyConfirm(gb){const p=state.plans.find(x=>Number(x.gb??x.volume)===Number(gb))||{gb,price:gb*3500};openModal(`<h2>${L('buy_title')} ${escapeHtml(p.gb)} ${state.language==='en'?'GB':'گیگ'}</h2><p>${L('valid')}</p><p><b>${L('amount')}: ${money(p.price)}</b></p><p>${L('wallet_balance')}: <b>${money(state.balance)}</b></p><button class="modal-action" onclick="doBuy(${Number(p.gb)})">${L('pay_wallet')}</button>`);}
+window.doBuy=async gb=>{try{closeModal();showToast(L('buying'));const data=await api('/api/buy',{method:'POST',body:JSON.stringify({volume:String(gb)})});state.balance=Number(data.balance??data.new_balance??state.balance);if(data.services)state.services=data.services;updateHeader();renderServices();let extra=data.link?`<p><b>${L('link')}:</b></p><textarea readonly class="link-box">${escapeHtml(data.link)}</textarea>`:'';openModal(`<h2>✅ ${L('buy_ok')}</h2><p>${L('order')} #${escapeHtml(data.order_id??'')} ${L('delivered')}</p><p>${L('new_balance')}: <b>${money(state.balance)}</b></p>${extra}<button class="modal-action" onclick="closeModal()">${L('ok')}</button>`);}catch(e){const msg=errorText(e);const insufficient=String(e?.message||'')==='insufficient_balance';openModal(`<h2>❌ ${L('buy_fail')}</h2><p>${escapeHtml(msg)}</p>${insufficient?`<button class="modal-action" onclick="openCharge()">${L('go_charge')}</button>`:''}<button class="modal-action secondary-action" onclick="closeModal()">${L('close')}</button>`);}};
+function walletModal(){const history=(state.history||[]).slice(0,10).map(x=>`<div class="tx">${Number(x.amount)>=0?'🟢':'🔴'} ${money(Math.abs(Number(x.amount)))} — ${escapeHtml(x.description||x.type||'')}<br><span>${escapeHtml(x.created_at||'')}</span></div>`).join('')||`<p>${L('no_tx')}</p>`;openModal(`<h2>${L('wallet_title')}</h2><p>${L('current')}: <b>${money(state.balance)}</b></p><button class="modal-action" onclick="openCharge()">＋ ${L('charge')}</button><h3 class="modal-subtitle">${L('transactions')}</h3>${history}`);}
+window.openCharge=()=>openModal(`<h2>${L('charge_title')}</h2><p>${L('min')}: ۱۰,۰۰۰ تومان</p><input id="charge-amount" inputmode="numeric" type="number" min="10000" placeholder="10000"><button class="modal-action" onclick="createCharge()">${L('continue')}</button>`);
+window.createCharge=async()=>{const amount=Number($('#charge-amount')?.value||0);if(amount<10000){showToast(L('min')+': ۱۰,۰۰۰ تومان');return;}try{showToast(L('creating'));const data=await api('/api/charge',{method:'POST',body:JSON.stringify({amount})});const card=data.card||data.card_number||data.payment_card||'';const orderId=data.order_id??data.order??'';state.chargeAmount=amount;openModal(`<h2>${L('payment')}</h2><p>${L('amount')}: <b>${money(amount)}</b></p><p>${L('order_no')}: <b>#${escapeHtml(orderId)}</b></p>${card?`<p>${L('card')}:</p><div class="card-number"><span>${escapeHtml(card)}</span><button class="copy-card" onclick="copyCard('${escapeHtml(card)}')" aria-label="${L('copy')}">📋</button></div>`:'<p>Card number unavailable.</p>'}<p class="hint">${L('receipt_hint')}</p><input id="receipt-file" type="file" accept="image/*"><button class="modal-action" onclick="sendReceipt(${Number(orderId)||0})">${L('send_receipt')}</button>`);}catch(e){openModal(`<h2>❌ ${L('buy_fail')}</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}};
+window.copyCard=async card=>{try{await navigator.clipboard.writeText(String(card));showToast(L('copied'));}catch(e){const ta=document.createElement('textarea');ta.value=card;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();showToast(L('copied'));}};
+window.sendReceipt=async orderId=>{const file=$('#receipt-file')?.files?.[0];if(!file){showToast(L('pick_receipt'));return;}if(!orderId){showToast(L('invalid_order'));return;}try{showToast(L('sending'));const reader=new FileReader();reader.onload=async()=>{try{const result=await api('/api/charge-receipt',{method:'POST',body:JSON.stringify({order_id:orderId,amount:Number(state.chargeAmount||0),image:String(reader.result),filename:file.name})});openModal(`<h2>✅ ${L('receipt_ok')}</h2><p>${L('receipt_sent')} #${escapeHtml(result.order_id??orderId)}</p><p>${L('after_approve')}</p><button class="modal-action" onclick="refreshData()">${L('refresh_balance')}</button>`);}catch(e){openModal(`<h2>❌ ${L('receipt_fail')}</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}};reader.readAsDataURL(file);}catch(e){showToast(errorText(e));}};
+async function showServices(){try{const data=await api('/api/services');state.services=data.services||[];renderServices();if(!state.services.length){openModal(`<h2>${L('services_title')}</h2><p>${L('no_services')}</p>`);return;}const list=state.services.map(s=>`<div class="service-list glass"><b>📦 ${escapeHtml(s.volume)} ${state.language==='en'?'GB':'گیگ'}</b><p>${L('order')} #${escapeHtml(s.id)}<br>${state.language==='en'?'Expires':'انقضا'}: ${escapeHtml(s.expires_at||'-')}</p>${s.link?`<textarea readonly class="link-box">${escapeHtml(s.link)}</textarea>`:''}<button class="modal-action" onclick="renewService(${Number(s.id)})">${L('renew')}</button></div>`).join('');openModal(`<h2>${L('services_title')}</h2>${list}`);}catch(e){openModal(`<h2>❌ ${L('close')}</h2><p>${escapeHtml(errorText(e))}</p>`);}}
 window.showServices=showServices;
-
-window.renewService=async orderId=>{
-  try{
-    showToast('در حال تمدید...');
-    const data=await api('/api/renew',{method:'POST',body:JSON.stringify({order_id:orderId})});
-    state.balance=Number(data.balance ?? data.new_balance ?? state.balance); updateHeader();
-    const link=data.link?`<p><b>لینک:</b></p><textarea readonly style="width:100%;min-height:80px;background:rgba(0,0,0,.2);color:white;border:1px solid var(--line);border-radius:10px;padding:8px;direction:ltr">${escapeHtml(data.link)}</textarea>`:'';
-    openModal(`<h2>✅ تمدید موفق</h2><p>سرویس با موفقیت تمدید شد.</p><p>موجودی جدید: <b>${money(state.balance)}</b></p>${link}<button class="modal-action" onclick="closeModal()">باشه</button>`);
-    await refreshData(false);
-  }catch(e){ openModal(`<h2>❌ تمدید انجام نشد</h2><p>${escapeHtml(e.message)}</p><button class="modal-action" onclick="closeModal()">بستن</button>`); }
-};
-
-async function refreshData(show=true){
-  try{
-    const data=await api('/api/bootstrap');
-    state={...state,...data,balance:Number(data.balance||0),plans:data.plans||data.tariffs||[],services:data.services||[],history:data.history||[]};
-    updateHeader(); renderPlans(); renderServices();
-    if(show) showToast('اطلاعات بروزرسانی شد');
-  }catch(e){
-    console.error(e);
-    if(show) showToast(e.message || 'اتصال به سرور برقرار نشد');
-  }
-}
+window.renewService=async orderId=>{try{showToast(L('renewing'));const data=await api('/api/renew',{method:'POST',body:JSON.stringify({order_id:orderId})});state.balance=Number(data.balance??data.new_balance??state.balance);updateHeader();const link=data.link?`<p><b>${L('link')}:</b></p><textarea readonly class="link-box">${escapeHtml(data.link)}</textarea>`:'';openModal(`<h2>✅ ${L('renew_ok')}</h2><p>${L('renew_done')}</p><p>${L('new_balance')}: <b>${money(state.balance)}</b></p>${link}<button class="modal-action" onclick="closeModal()">${L('ok')}</button>`);await refreshData(false);}catch(e){openModal(`<h2>❌ ${L('renew_fail')}</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}};
+async function refreshData(show=true){try{const data=await api('/api/bootstrap');state={...state,...data,balance:Number(data.balance||0),plans:data.plans||data.tariffs||[],services:data.services||[],history:data.history||[],language:data.language||state.language||'fa'};applyLanguage();updateHeader();renderPlans();renderServices();if(show)showToast(L('refresh'));}catch(e){console.error(e);if(show)showToast(errorText(e)||L('network'));}}
 window.refreshData=refreshData;
-
-function setupTelegram(){
-  if(!tg){ showToast('این صفحه را داخل Telegram Mini App باز کن'); return; }
-  tg.ready(); tg.expand();
-  try{ tg.setHeaderColor('#071426'); tg.setBackgroundColor('#050b16'); }catch(e){}
-}
-
-function navigate(page){
-  document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===page));
-  if(page==='home') window.scrollTo({top:0,behavior:'smooth'});
-  if(page==='services') showServices();
-  if(page==='help') $('#help-panel').scrollIntoView({behavior:'smooth',block:'start'});
-  if(page==='wallet') walletModal();
-}
-
-function action(a){
-  if(a==='wallet') return navigate('wallet');
-  if(a==='services') return navigate('services');
-  if(a==='help') return navigate('help');
-  if(a==='support') { if(tg?.openTelegramLink) tg.openTelegramLink(state.support||'https://t.me/ByHxnzu'); else location.href=state.support||'https://t.me/ByHxnzu'; return; }
-  const data={
-    android:['🤖 Android','۱) Hiddify یا V2Box را نصب کن.','۲) لینک اشتراک دریافتی را کپی کن.','۳) داخل برنامه گزینه افزودن Subscription را بزن.','۴) Update و سپس Connect کن.'],
-    ios:[' iPhone / iOS','۱) Hiddify یا V2Box را نصب کن.','۲) لینک اشتراک را کپی کن.','۳) لینک را داخل برنامه Import کن.','۴) Update و Connect کن.'],
-    windows:['▣ Windows','۱) Hiddify یا v2rayN را نصب کن.','۲) لینک Subscription را کپی کن.','۳) Import Subscription را بزن.','۴) Update و کانفیگ را فعال کن.']
-  };
-  if(data[a]) openModal(`<h2>${data[a][0]}</h2><ol>${data[a].slice(1).map(x=>`<li>${x}</li>`).join('')}</ol>`);
-}
-
-document.addEventListener('click',e=>{
-  const actionBtn=e.target.closest('[data-action]'); if(actionBtn) action(actionBtn.dataset.action);
-  const nav=e.target.closest('[data-page]'); if(nav) navigate(nav.dataset.page);
-});
+function setupTelegram(){if(!tg){showToast('Telegram Mini App');return;}tg.ready();tg.expand();try{tg.setHeaderColor('#9edbff');tg.setBackgroundColor('#eaf7ff');}catch(e){}}
+function navigate(page){document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===page));if(page==='home')window.scrollTo({top:0,behavior:'smooth'});if(page==='services')showServices();if(page==='help')$('#help-panel').scrollIntoView({behavior:'smooth',block:'start'});if(page==='wallet')walletModal();}
+function action(a){if(a==='wallet')return navigate('wallet');if(a==='services')return navigate('services');if(a==='help')return navigate('help');if(a==='support'){if(tg?.openTelegramLink)tg.openTelegramLink(state.support||'https://t.me/ByHxnzu');else location.href=state.support||'https://t.me/ByHxnzu';return;}const data={android:[`🤖 ${L('android')}`,state.language==='en'?['1) Install Hiddify or V2Box.','2) Copy your subscription link.','3) Add the Subscription in the app.','4) Update and Connect.']:['۱) Hiddify یا V2Box را نصب کن.','۲) لینک اشتراک را کپی کن.','۳) داخل برنامه Subscription را اضافه کن.','۴) Update و Connect کن.']],ios:[` ${L('ios')}`,state.language==='en'?['1) Install Hiddify or V2Box.','2) Copy the subscription link.','3) Import it into the app.','4) Update and Connect.']:['۱) Hiddify یا V2Box را نصب کن.','۲) لینک اشتراک را کپی کن.','۳) لینک را داخل برنامه Import کن.','۴) Update و Connect کن.']],windows:[`▣ ${L('windows')}`,state.language==='en'?['1) Install Hiddify or v2rayN.','2) Copy your subscription link.','3) Import Subscription.','4) Update and connect.']:['۱) Hiddify یا v2rayN را نصب کن.','۲) لینک Subscription را کپی کن.','۳) Import Subscription را بزن.','۴) Update و اتصال را فعال کن.']]};if(data[a])openModal(`<h2>${data[a][0]}</h2><ol>${data[a][1].map(x=>`<li>${x}</li>`).join('')}</ol><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}
+document.addEventListener('click',e=>{const actionBtn=e.target.closest('[data-action]');if(actionBtn)action(actionBtn.dataset.action);const nav=e.target.closest('[data-page]');if(nav)navigate(nav.dataset.page);});
 $('#refresh').addEventListener('click',()=>refreshData(true));
-$('#modal-close').addEventListener('click',closeModal);
-modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
-
+const langBtn=document.createElement('button');langBtn.className='icon-btn lang-btn';langBtn.id='language';langBtn.textContent='🌐';langBtn.setAttribute('aria-label','Language');document.querySelector('.topbar')?.appendChild(langBtn);langBtn.addEventListener('click',()=>{openModal(`<h2>🌐 ${state.language==='en'?'Language':state.language==='ku'?'زمان':'زبان'}</h2>${Object.entries(LANG_NAMES).map(([k,v])=>`<button class="modal-action ${k===state.language?'selected-lang':''}" onclick="setLanguage('${k}')">${v}</button>`).join('')}`);});
+window.setLanguage=async lang=>{try{await api('/api/language',{method:'POST',body:JSON.stringify({language:lang})});state.language=lang;applyLanguage();renderPlans();renderServices();closeModal();showToast(lang==='en'?'Language changed':lang==='ku'?'زمان گۆڕدرا':'زبان تغییر کرد');}catch(e){showToast(errorText(e));}};$('#modal-close').addEventListener('click',closeModal);modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
 setupTelegram();
+renderPlans();renderServices();
 refreshData(false);
-setTimeout(()=>{$('#loader').classList.add('hide');$('#app').hidden=false},1100);
-
-
-// STARTUP
-setupTelegram();
-renderPlans();
-renderServices();
-refreshData(false);
+setTimeout(()=>{$('#loader').classList.add('hide');$('#app').hidden=false},700);
