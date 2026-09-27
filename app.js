@@ -1,6 +1,6 @@
 const tg = window.Telegram?.WebApp;
 const API_BASE = 'https://hanzuvpn-bot-production.up.railway.app';
-const API_VERSION = '20260927-v4';
+const API_VERSION = '20260928-v6';
 const $ = s => document.querySelector(s);
 let state = { balance: 0, plans: [], services: [], history: [], user: null, support: 'https://t.me/ByHxnzu', language: 'fa' };
 const modal = $('#modal');
