@@ -78,7 +78,18 @@ window.doBuy = async gb => {
     let extra = '';
     if(data.link) extra = `<p><b>لینک اشتراک:</b></p><textarea readonly style="width:100%;min-height:80px;background:rgba(0,0,0,.2);color:white;border:1px solid var(--line);border-radius:10px;padding:8px;direction:ltr">${escapeHtml(data.link)}</textarea>`;
     openModal(`<h2>✅ خرید موفق</h2><p>سفارش #${escapeHtml(data.order_id ?? '')} ثبت و سرویس تحویل شد.</p><p>موجودی جدید: <b>${money(state.balance)}</b></p>${extra}<button class="modal-action" onclick="closeModal()">باشه</button>`);
-  }catch(e){ openModal(`<h2>❌ خرید انجام نشد</h2><p>${escapeHtml(e.message)}</p><button class="modal-action" onclick="closeModal()">بستن</button>`); }
+  }catch(e){
+    const code = String(e?.message || 'unknown_error');
+    const messages = {
+      insufficient_balance: 'موجودی کیف پول برای این خرید کافی نیست.',
+      no_stock: 'این حجم فعلاً موجود نیست. لطفاً حجم دیگری را انتخاب کنید.',
+      unauthorized: 'اتصال تلگرام به مینی‌اپ معتبر نیست. مینی‌اپ را از دکمه رسمی ربات باز کنید.',
+      invalid_volume: 'حجم انتخاب‌شده معتبر نیست.',
+      service_not_found: 'سرویس موردنظر پیدا نشد.',
+    };
+    const msg = messages[code] || code;
+    openModal(`<h2>❌ خرید انجام نشد</h2><p>${escapeHtml(msg)}</p><small style="display:block;color:#7189a3;direction:ltr;margin-top:8px">${escapeHtml(code)}</small><button class="modal-action" onclick="closeModal()">بستن</button>`);
+  }
 };
 
 function walletModal(){
