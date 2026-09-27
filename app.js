@@ -10,20 +10,17 @@ function showToast(text){
   const el=$('#toast'); el.textContent=text; el.classList.add('show');
   clearTimeout(window.toastTimer); window.toastTimer=setTimeout(()=>el.classList.remove('show'),2600);
 }
-function openModal(html){
-  const content = String(html ?? '').trim();
-  if(!content) { closeModal(); return; }
-  $('#modal-content').innerHTML=content;
-  modal.hidden=false;
-}
-
+function openModal(html){ $('#modal-content').innerHTML=html; modal.hidden=false; }
 function closeModal(){ modal.hidden=true; }
 function escapeHtml(v){ return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function initData(){ return tg?.initData || ''; }
 
 async function api(path, options={}){
-  const headers = {'Content-Type':'application/json','X-Telegram-Init-Data':initData(), ...(options.headers||{})};
-  const res = await fetch(API_BASE + path, {...options, headers});
+  const rawInit = initData();
+  const headers = {'Content-Type':'application/json','X-Telegram-Init-Data':rawInit,'Authorization':rawInit ? ('tma ' + rawInit) : '', ...(options.headers||{})};
+  const sep = path.includes('?') ? '&' : '?';
+  const url = rawInit ? (API_BASE + path + sep + 'initData=' + encodeURIComponent(rawInit)) : (API_BASE + path);
+  const res = await fetch(url, {...options, headers});
   let data = {};
   try { data = await res.json(); } catch(e) { throw new Error('پاسخ نامعتبر از سرور دریافت شد.'); }
   if(!res.ok || data.ok === false) throw new Error(data.error || 'عملیات ناموفق بود.');
@@ -196,8 +193,6 @@ document.addEventListener('click',e=>{
 });
 $('#refresh').addEventListener('click',()=>refreshData(true));
 $('#modal-close').addEventListener('click',closeModal);
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
-modal.hidden=true;
 modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
 
 setupTelegram();
