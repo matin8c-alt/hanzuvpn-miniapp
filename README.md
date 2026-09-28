@@ -13,3 +13,6 @@
 
 ## اتصال به ربات
 نسخه فعلی رابط کاربری آماده است، اما برای اطلاعات واقعی کیف پول، سرویس‌ها و خرید باید یک endpoint/API امن به ربات یا بک‌اند متصل شود. `Telegram.WebApp.sendData` برای ارسال درخواست‌های اولیه از Mini App به ربات در نظر گرفته شده است.
+
+
+UI20: Telegram native Main/Secondary BottomButtons hard-disabled and app.js cache-busted.

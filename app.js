@@ -149,30 +149,42 @@ async function refreshData(show=true){try{const data=await api('/api/bootstrap')
 window.refreshData=refreshData;
 function setupTelegram(){
   if(!tg){showToast('Telegram Mini App');return;}
-  tg.ready();
-  tg.expand();
-  try{
-    // Telegram's native BottomButton (formerly MainButton) can leave a blank
-    // rounded bar at the bottom of the Mini App. This app uses its own bottom
-    // navigation, so explicitly hide both native bottom buttons.
-    if(tg.MainButton){
-      try{tg.MainButton.hide();}catch(e){}
-      try{tg.MainButton.setParams({is_visible:false});}catch(e){}
-    }
-    if(tg.SecondaryButton){
-      try{tg.SecondaryButton.hide();}catch(e){}
-      try{tg.SecondaryButton.setParams({is_visible:false});}catch(e){}
-    }
-    tg.setHeaderColor('#102a43');
-    tg.setBackgroundColor('#0b1624');
-    if(tg.setBottomBarColor) tg.setBottomBarColor('#06111c');
-  }catch(e){}
-  // Re-assert visibility state after Telegram finishes resizing the WebView.
-  [0,150,500].forEach(ms=>setTimeout(()=>{
-    try{tg.MainButton?.hide();}catch(e){}
-    try{tg.SecondaryButton?.hide();}catch(e){}
-  },ms));
+  try{tg.ready();}catch(e){}
+  try{tg.expand();}catch(e){}
+
+  // HARD DISABLE Telegram native bottom controls.
+  // This Mini App uses its own navigation bar, so Telegram Main/Secondary
+  // BottomButtons must never be visible or reserve a visible button surface.
+  const killNativeBottomButtons=()=>{
+    try{
+      const b=tg.MainButton;
+      if(b){
+        try{b.hide();}catch(e){}
+        try{b.setParams({is_visible:false,is_active:false,text:'',color:'#0b1624',text_color:'#0b1624',has_shine_effect:false});}catch(e){}
+      }
+    }catch(e){}
+    try{
+      const b=tg.SecondaryButton;
+      if(b){
+        try{b.hide();}catch(e){}
+        try{b.setParams({is_visible:false,is_active:false,text:'',color:'#0b1624',text_color:'#0b1624',has_shine_effect:false});}catch(e){}
+      }
+    }catch(e){}
+    try{tg.BackButton?.hide();}catch(e){}
+    try{tg.setHeaderColor('#102a43');}catch(e){}
+    try{tg.setBackgroundColor('#0b1624');}catch(e){}
+    // Keep Telegram's native bottom area visually identical to the app
+    // background; it must not appear as an extra rounded box.
+    try{tg.setBottomBarColor?.('#0b1624');}catch(e){}
+  };
+
+  killNativeBottomButtons();
+  [50,150,300,600,1000,1800,3000].forEach(ms=>setTimeout(killNativeBottomButtons,ms));
+  try{tg.onEvent?.('viewportChanged',killNativeBottomButtons);}catch(e){}
+  try{tg.onEvent?.('activated',killNativeBottomButtons);}catch(e){}
+  try{tg.onEvent?.('fullscreenChanged',killNativeBottomButtons);}catch(e){}
 }
+
 function navigate(page){document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===page));if(page==='home')window.scrollTo({top:0,behavior:'smooth'});if(page==='services')showServices();if(page==='help')$('#help-panel').scrollIntoView({behavior:'smooth',block:'start'});if(page==='wallet')walletModal();}
 function action(a){if(a==='wallet')return navigate('wallet');if(a==='services')return navigate('services');if(a==='help')return navigate('help');if(a==='support'){if(tg?.openTelegramLink)tg.openTelegramLink(state.support||'https://t.me/ByHxnzu');else location.href=state.support||'https://t.me/ByHxnzu';return;}const data={android:[`🤖 ${L('android')}`,state.language==='en'?['1) Install Hiddify or V2Box.','2) Copy your subscription link.','3) Add the Subscription in the app.','4) Update and Connect.']:['۱) Hiddify یا V2Box را نصب کن.','۲) لینک اشتراک را کپی کن.','۳) داخل برنامه Subscription را اضافه کن.','۴) Update و Connect کن.']],ios:[` ${L('ios')}`,state.language==='en'?['1) Install Hiddify or V2Box.','2) Copy the subscription link.','3) Import it into the app.','4) Update and Connect.']:['۱) Hiddify یا V2Box را نصب کن.','۲) لینک اشتراک را کپی کن.','۳) لینک را داخل برنامه Import کن.','۴) Update و Connect کن.']],windows:[`▣ ${L('windows')}`,state.language==='en'?['1) Install Hiddify or v2rayN.','2) Copy your subscription link.','3) Import Subscription.','4) Update and connect.']:['۱) Hiddify یا v2rayN را نصب کن.','۲) لینک Subscription را کپی کن.','۳) Import Subscription را بزن.','۴) Update و اتصال را فعال کن.']]};if(data[a])openModal(`<h2>${data[a][0]}</h2><ol>${data[a][1].map(x=>`<li>${x}</li>`).join('')}</ol><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}
 document.addEventListener('click',e=>{const actionBtn=e.target.closest('[data-action]');if(actionBtn)action(actionBtn.dataset.action);const nav=e.target.closest('[data-page]');if(nav)navigate(nav.dataset.page);});
