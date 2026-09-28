@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#071522">
-  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#9edbff">
+  <meta name="color-scheme" content="light">
   <title>HanzuVPN</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260928-ui20">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20260928-fast1">
   <link rel="preload" as="image" href="logo.webp">
-  <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
   <div id="loader" class="loader-screen">
@@ -26,47 +26,41 @@
 
   <div class="bg-orb orb-one"></div>
   <div class="bg-orb orb-two"></div>
-  <div class="bg-grid"></div>
-
   <main class="app" id="app" hidden>
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark"><img src="logo.webp" alt="HanzuVPN" class="brand-logo"></div>
+        <img src="logo.webp" alt="HanzuVPN" class="brand-logo">
         <div><strong>HanzuVPN</strong><span id="hello">پنل کاربری</span></div>
       </div>
-      <div class="top-actions">
-        <button class="icon-btn" id="refresh" aria-label="بروزرسانی">↻</button>
-      </div>
+      <button class="icon-btn" id="refresh" aria-label="بروزرسانی">↻</button>
     </header>
 
     <section class="hero glass">
-      <div class="hero-glow"></div>
-      <div class="hero-copy">
-        <div class="status-pill"><i></i><span>HanzuVPN</span></div>
+      <div>
         <span class="eyebrow">موجودی کیف پول</span>
         <div class="balance" id="balance">۰ تومان</div>
         <small id="tg-user">کاربر HanzuVPN</small>
       </div>
-      <button class="primary hero-action" data-action="wallet"><span class="action-icon">＋</span><span>شارژ کیف پول</span></button>
+      <button class="primary" data-action="wallet">＋ شارژ کیف پول</button>
     </section>
 
     <section class="section" data-section="home">
-      <div class="section-head"><div><h2>خرید اشتراک</h2><p>انتخاب حجم و فعال‌سازی سریع</p></div><span class="section-chip">۳۰ روزه</span></div>
+      <div class="section-head"><h2>خرید اشتراک</h2><span>۳۰ روزه</span></div>
       <div class="plans" id="plans"></div>
     </section>
 
     <section class="section">
-      <div class="section-head"><div><h2>دسترسی سریع</h2><p>همه‌چیز همیشه در دسترس</p></div></div>
+      <div class="section-head"><h2>دسترسی سریع</h2></div>
       <div class="quick-grid">
-        <button class="quick glass" data-action="services"><span class="quick-icon">◈</span><div><b>سرویس‌های من</b><small>مدیریت و تمدید</small></div><em>›</em></button>
-        <button class="quick glass" data-action="wallet"><span class="quick-icon">◉</span><div><b>کیف پول</b><small>موجودی و تراکنش‌ها</small></div><em>›</em></button>
-        <button class="quick glass" data-action="help"><span class="quick-icon">⌁</span><div><b>آموزش اتصال</b><small>Android / iPhone / Windows</small></div><em>›</em></button>
-        <button class="quick glass" data-action="support"><span class="quick-icon">✦</span><div><b>پشتیبانی</b><small>@ByHxnzu</small></div><em>›</em></button>
+        <button class="quick glass" data-action="services"><span>📊</span><b>سرویس‌های من</b><small>مدیریت و تمدید</small></button>
+        <button class="quick glass" data-action="wallet"><span>💰</span><b>کیف پول</b><small>موجودی و تراکنش‌ها</small></button>
+        <button class="quick glass" data-action="help"><span>📚</span><b>آموزش اتصال</b><small>Android / iPhone / Windows</small></button>
+        <button class="quick glass" data-action="support"><span>👨🏻‍💻</span><b>پشتیبانی</b><small>@ByHxnzu</small></button>
       </div>
     </section>
 
     <section class="section" id="services-panel">
-      <div class="section-head"><div><h2>سرویس‌های من</h2><p>وضعیت سرویس فعلی</p></div><button class="link-btn" data-action="services">مشاهده همه</button></div>
+      <div class="section-head"><h2>سرویس‌های من</h2><button class="link-btn" data-action="services">مشاهده همه</button></div>
       <div class="service glass" id="service">
         <div class="service-icon">⌁</div>
         <div><strong>هنوز سرویسی ندارید</strong><p>بعد از خرید، سرویس‌های فعال اینجا نمایش داده می‌شوند.</p></div>
@@ -74,15 +68,14 @@
     </section>
 
     <section class="section info-section" id="help-panel">
-      <div class="section-head"><div><h2>راهنمای اتصال</h2><p>انتخاب دستگاه برای مشاهده آموزش</p></div></div>
+      <div class="section-head"><h2>راهنمای اتصال</h2></div>
       <div class="os-grid">
-        <button class="os-card glass" data-action="android"><span>🤖</span><div><b>Android</b><small>Hiddify • V2Box • v2rayNG</small></div><em>›</em></button>
-        <button class="os-card glass" data-action="ios"><span></span><div><b>iPhone / iOS</b><small>Hiddify • V2Box • Streisand</small></div><em>›</em></button>
-        <button class="os-card glass" data-action="windows"><span>▣</span><div><b>Windows</b><small>Hiddify • v2rayN</small></div><em>›</em></button>
+        <button class="os-card glass" data-action="android"><span>🤖</span><b>Android</b><small>Hiddify • V2Box • v2rayNG</small></button>
+        <button class="os-card glass" data-action="ios"><span></span><b>iPhone / iOS</b><small>Hiddify • V2Box • Streisand</small></button>
+        <button class="os-card glass" data-action="windows"><span>▣</span><b>Windows</b><small>Hiddify • v2rayN</small></button>
       </div>
     </section>
 
-    <div class="bottom-space"></div>
     <nav class="bottom glass" aria-label="منوی اصلی">
       <button class="nav active" data-page="home"><span>⌂</span><small>خانه</small></button>
       <button class="nav" data-page="services"><span>◈</span><small>سرویس‌ها</small></button>
@@ -93,10 +86,11 @@
 
   <div class="modal-backdrop" id="modal" hidden>
     <div class="modal glass" role="dialog" aria-modal="true">
+      <button class="modal-close" id="modal-close">×</button>
       <div id="modal-content"></div>
     </div>
   </div>
   <div class="toast" id="toast"></div>
-  <script src="app.js?v=20260928-ui19"></script>
+  <script src="app.js?v=20260928-fast1"></script>
 </body>
 </html>

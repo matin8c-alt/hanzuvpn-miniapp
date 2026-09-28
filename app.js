@@ -26,7 +26,7 @@ const I18N = {
 function L(k){ return (I18N[state.language]||I18N.fa)[k] || I18N.fa[k] || k; }
 const money = n => new Intl.NumberFormat(state.language==='en'?'en-US':'fa-IR').format(Number(n||0)) + (state.language==='en'?' Toman':' تومان');
 function showToast(text){const el=$('#toast');el.textContent=text;el.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>el.classList.remove('show'),2600);}
-function openModal(html){$('#modal-content').innerHTML=html;document.querySelectorAll('.modal-close').forEach(el=>el.remove());modal.hidden=false;}
+function openModal(html){$('#modal-content').innerHTML=html;modal.hidden=false;}
 function closeModal(){modal.hidden=true;}
 function clearReceiptPreviewUrl(){
   if(window.__receiptPreviewUrl){try{URL.revokeObjectURL(window.__receiptPreviewUrl);}catch(e){} window.__receiptPreviewUrl='';}
@@ -147,68 +147,14 @@ window.showServices=showServices;
 window.renewService=async orderId=>{try{showToast(L('renewing'));const data=await api('/api/renew',{method:'POST',body:JSON.stringify({order_id:orderId})});state.balance=Number(data.balance??data.new_balance??state.balance);updateHeader();const link=data.link?`<p><b>${L('link')}:</b></p><div class="link-row"><textarea readonly class="link-box">${escapeHtml(data.link)}</textarea><button class="copy-link" onclick="copyServiceLink(this)" data-link="${escapeHtml(data.link)}" aria-label="${L('copy')}">📋</button></div>`:'';openModal(`<h2>✅ ${L('renew_ok')}</h2><p>${L('renew_done')}</p><p>${L('new_balance')}: <b>${money(state.balance)}</b></p>${link}<button class="modal-action" onclick="closeModal()">${L('ok')}</button>`);await refreshData(false);}catch(e){openModal(`<h2>❌ ${L('renew_fail')}</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}};
 async function refreshData(show=true){try{const data=await api('/api/bootstrap');state={...state,...data,balance:Number(data.balance||0),plans:data.plans||data.tariffs||[],services:data.services||[],history:data.history||[],language:data.language||state.language||'fa'};applyLanguage();updateHeader();renderPlans();renderServices();if(show)showToast(L('refresh'));}catch(e){console.error(e);if(show)showToast(errorText(e)||L('network'));}}
 window.refreshData=refreshData;
-function setupTelegram(){
-  if(!tg){showToast('Telegram Mini App');return;}
-  try{tg.ready();}catch(e){}
-  try{tg.expand();}catch(e){}
-
-  // HARD DISABLE Telegram native bottom controls.
-  // This Mini App uses its own navigation bar, so Telegram Main/Secondary
-  // BottomButtons must never be visible or reserve a visible button surface.
-  const killNativeBottomButtons=()=>{
-    try{
-      const b=tg.MainButton;
-      if(b){
-        try{b.hide();}catch(e){}
-        try{b.setParams({is_visible:false,is_active:false,text:'',color:'#0b1624',text_color:'#0b1624',has_shine_effect:false});}catch(e){}
-      }
-    }catch(e){}
-    try{
-      const b=tg.SecondaryButton;
-      if(b){
-        try{b.hide();}catch(e){}
-        try{b.setParams({is_visible:false,is_active:false,text:'',color:'#0b1624',text_color:'#0b1624',has_shine_effect:false});}catch(e){}
-      }
-    }catch(e){}
-    try{tg.BackButton?.hide();}catch(e){}
-    try{tg.setHeaderColor('#102a43');}catch(e){}
-    try{tg.setBackgroundColor('#0b1624');}catch(e){}
-    // Keep Telegram's native bottom area visually identical to the app
-    // background; it must not appear as an extra rounded box.
-    try{tg.setBottomBarColor?.('#0b1624');}catch(e){}
-  };
-
-  killNativeBottomButtons();
-  [50,150,300,600,1000,1800,3000].forEach(ms=>setTimeout(killNativeBottomButtons,ms));
-  try{tg.onEvent?.('viewportChanged',killNativeBottomButtons);}catch(e){}
-  try{tg.onEvent?.('activated',killNativeBottomButtons);}catch(e){}
-  try{tg.onEvent?.('fullscreenChanged',killNativeBottomButtons);}catch(e){}
-}
-
+function setupTelegram(){if(!tg){showToast('Telegram Mini App');return;}tg.ready();tg.expand();try{tg.setHeaderColor('#102a43');tg.setBackgroundColor('#0b1624');}catch(e){}}
 function navigate(page){document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===page));if(page==='home')window.scrollTo({top:0,behavior:'smooth'});if(page==='services')showServices();if(page==='help')$('#help-panel').scrollIntoView({behavior:'smooth',block:'start'});if(page==='wallet')walletModal();}
 function action(a){if(a==='wallet')return navigate('wallet');if(a==='services')return navigate('services');if(a==='help')return navigate('help');if(a==='support'){if(tg?.openTelegramLink)tg.openTelegramLink(state.support||'https://t.me/ByHxnzu');else location.href=state.support||'https://t.me/ByHxnzu';return;}const data={android:[`🤖 ${L('android')}`,state.language==='en'?['1) Install Hiddify or V2Box.','2) Copy your subscription link.','3) Add the Subscription in the app.','4) Update and Connect.']:['۱) Hiddify یا V2Box را نصب کن.','۲) لینک اشتراک را کپی کن.','۳) داخل برنامه Subscription را اضافه کن.','۴) Update و Connect کن.']],ios:[` ${L('ios')}`,state.language==='en'?['1) Install Hiddify or V2Box.','2) Copy the subscription link.','3) Import it into the app.','4) Update and Connect.']:['۱) Hiddify یا V2Box را نصب کن.','۲) لینک اشتراک را کپی کن.','۳) لینک را داخل برنامه Import کن.','۴) Update و Connect کن.']],windows:[`▣ ${L('windows')}`,state.language==='en'?['1) Install Hiddify or v2rayN.','2) Copy your subscription link.','3) Import Subscription.','4) Update and connect.']:['۱) Hiddify یا v2rayN را نصب کن.','۲) لینک Subscription را کپی کن.','۳) Import Subscription را بزن.','۴) Update و اتصال را فعال کن.']]};if(data[a])openModal(`<h2>${data[a][0]}</h2><ol>${data[a][1].map(x=>`<li>${x}</li>`).join('')}</ol><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}
 document.addEventListener('click',e=>{const actionBtn=e.target.closest('[data-action]');if(actionBtn)action(actionBtn.dataset.action);const nav=e.target.closest('[data-page]');if(nav)navigate(nav.dataset.page);});
 $('#refresh').addEventListener('click',()=>refreshData(true));
 const langBtn=document.createElement('button');langBtn.className='icon-btn lang-btn';langBtn.id='language';langBtn.textContent='🌐';langBtn.setAttribute('aria-label','Language');document.querySelector('.topbar')?.appendChild(langBtn);langBtn.addEventListener('click',()=>{openModal(`<h2>🌐 ${state.language==='en'?'Language':state.language==='ku'?'زمان':'زبان'}</h2>${Object.entries(LANG_NAMES).map(([k,v])=>`<button class="modal-action ${k===state.language?'selected-lang':''}" onclick="setLanguage('${k}')">${v}</button>`).join('')}`);});
-window.setLanguage=async lang=>{try{await api('/api/language',{method:'POST',body:JSON.stringify({language:lang})});state.language=lang;applyLanguage();renderPlans();renderServices();closeModal();showToast(lang==='en'?'Language changed':lang==='ku'?'زمان گۆڕدرا':'زبان تغییر کرد');}catch(e){showToast(errorText(e));}};modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
+window.setLanguage=async lang=>{try{await api('/api/language',{method:'POST',body:JSON.stringify({language:lang})});state.language=lang;applyLanguage();renderPlans();renderServices();closeModal();showToast(lang==='en'?'Language changed':lang==='ku'?'زمان گۆڕدرا':'زبان تغییر کرد');}catch(e){showToast(errorText(e));}};$('#modal-close').addEventListener('click',closeModal);modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
 setupTelegram();
-// Remove only stray close/exit overlays that may be injected into the Mini App UI.
-(function removeStrayCloseOverlays(){
-  const isStrayClose = el => {
-    if (!(el instanceof Element)) return false;
-    if (el.matches('.modal-close,.close-box,.close-btn,.close-button,.popup-close,.sheet-close,[data-close]')) return true;
-    const cls = String(el.className || '').toLowerCase();
-    if (/(close|dismiss|sheet-close|popup-close)/.test(cls) && el.closest('#modal') == null) return true;
-    return false;
-  };
-  const clean = root => {
-    if (root instanceof Element && isStrayClose(root)) { root.remove(); return; }
-    if (root && root.querySelectorAll) root.querySelectorAll('.modal-close,.close-box,.close-btn,.close-button,.popup-close,.sheet-close,[data-close]').forEach(n => n.remove());
-  };
-  clean(document.documentElement);
-  new MutationObserver(muts => muts.forEach(m => m.addedNodes.forEach(clean))).observe(document.documentElement,{subtree:true,childList:true});
-})();
-
 renderPlans();renderServices();
 refreshData(false);
 setTimeout(()=>{$('#loader').classList.add('hide');$('#app').hidden=false},150);
