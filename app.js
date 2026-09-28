@@ -155,6 +155,23 @@ $('#refresh').addEventListener('click',()=>refreshData(true));
 const langBtn=document.createElement('button');langBtn.className='icon-btn lang-btn';langBtn.id='language';langBtn.textContent='🌐';langBtn.setAttribute('aria-label','Language');document.querySelector('.topbar')?.appendChild(langBtn);langBtn.addEventListener('click',()=>{openModal(`<h2>🌐 ${state.language==='en'?'Language':state.language==='ku'?'زمان':'زبان'}</h2>${Object.entries(LANG_NAMES).map(([k,v])=>`<button class="modal-action ${k===state.language?'selected-lang':''}" onclick="setLanguage('${k}')">${v}</button>`).join('')}`);});
 window.setLanguage=async lang=>{try{await api('/api/language',{method:'POST',body:JSON.stringify({language:lang})});state.language=lang;applyLanguage();renderPlans();renderServices();closeModal();showToast(lang==='en'?'Language changed':lang==='ku'?'زمان گۆڕدرا':'زبان تغییر کرد');}catch(e){showToast(errorText(e));}};modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
 setupTelegram();
+// Remove only stray close/exit overlays that may be injected into the Mini App UI.
+(function removeStrayCloseOverlays(){
+  const isStrayClose = el => {
+    if (!(el instanceof Element)) return false;
+    if (el.matches('.modal-close,.close-box,.close-btn,.close-button,.popup-close,.sheet-close,[data-close]')) return true;
+    const cls = String(el.className || '').toLowerCase();
+    if (/(close|dismiss|sheet-close|popup-close)/.test(cls) && el.closest('#modal') == null) return true;
+    return false;
+  };
+  const clean = root => {
+    if (root instanceof Element && isStrayClose(root)) { root.remove(); return; }
+    if (root && root.querySelectorAll) root.querySelectorAll('.modal-close,.close-box,.close-btn,.close-button,.popup-close,.sheet-close,[data-close]').forEach(n => n.remove());
+  };
+  clean(document.documentElement);
+  new MutationObserver(muts => muts.forEach(m => m.addedNodes.forEach(clean))).observe(document.documentElement,{subtree:true,childList:true});
+})();
+
 renderPlans();renderServices();
 refreshData(false);
 setTimeout(()=>{$('#loader').classList.add('hide');$('#app').hidden=false},150);
