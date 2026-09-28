@@ -147,7 +147,32 @@ window.showServices=showServices;
 window.renewService=async orderId=>{try{showToast(L('renewing'));const data=await api('/api/renew',{method:'POST',body:JSON.stringify({order_id:orderId})});state.balance=Number(data.balance??data.new_balance??state.balance);updateHeader();const link=data.link?`<p><b>${L('link')}:</b></p><div class="link-row"><textarea readonly class="link-box">${escapeHtml(data.link)}</textarea><button class="copy-link" onclick="copyServiceLink(this)" data-link="${escapeHtml(data.link)}" aria-label="${L('copy')}">📋</button></div>`:'';openModal(`<h2>✅ ${L('renew_ok')}</h2><p>${L('renew_done')}</p><p>${L('new_balance')}: <b>${money(state.balance)}</b></p>${link}<button class="modal-action" onclick="closeModal()">${L('ok')}</button>`);await refreshData(false);}catch(e){openModal(`<h2>❌ ${L('renew_fail')}</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}};
 async function refreshData(show=true){try{const data=await api('/api/bootstrap');state={...state,...data,balance:Number(data.balance||0),plans:data.plans||data.tariffs||[],services:data.services||[],history:data.history||[],language:data.language||state.language||'fa'};applyLanguage();updateHeader();renderPlans();renderServices();if(show)showToast(L('refresh'));}catch(e){console.error(e);if(show)showToast(errorText(e)||L('network'));}}
 window.refreshData=refreshData;
-function setupTelegram(){if(!tg){showToast('Telegram Mini App');return;}tg.ready();tg.expand();try{tg.setHeaderColor('#102a43');tg.setBackgroundColor('#0b1624');}catch(e){}}
+function setupTelegram(){
+  if(!tg){showToast('Telegram Mini App');return;}
+  tg.ready();
+  tg.expand();
+  try{
+    // Telegram's native BottomButton (formerly MainButton) can leave a blank
+    // rounded bar at the bottom of the Mini App. This app uses its own bottom
+    // navigation, so explicitly hide both native bottom buttons.
+    if(tg.MainButton){
+      try{tg.MainButton.hide();}catch(e){}
+      try{tg.MainButton.setParams({is_visible:false});}catch(e){}
+    }
+    if(tg.SecondaryButton){
+      try{tg.SecondaryButton.hide();}catch(e){}
+      try{tg.SecondaryButton.setParams({is_visible:false});}catch(e){}
+    }
+    tg.setHeaderColor('#102a43');
+    tg.setBackgroundColor('#0b1624');
+    if(tg.setBottomBarColor) tg.setBottomBarColor('#06111c');
+  }catch(e){}
+  // Re-assert visibility state after Telegram finishes resizing the WebView.
+  [0,150,500].forEach(ms=>setTimeout(()=>{
+    try{tg.MainButton?.hide();}catch(e){}
+    try{tg.SecondaryButton?.hide();}catch(e){}
+  },ms));
+}
 function navigate(page){document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===page));if(page==='home')window.scrollTo({top:0,behavior:'smooth'});if(page==='services')showServices();if(page==='help')$('#help-panel').scrollIntoView({behavior:'smooth',block:'start'});if(page==='wallet')walletModal();}
 function action(a){if(a==='wallet')return navigate('wallet');if(a==='services')return navigate('services');if(a==='help')return navigate('help');if(a==='support'){if(tg?.openTelegramLink)tg.openTelegramLink(state.support||'https://t.me/ByHxnzu');else location.href=state.support||'https://t.me/ByHxnzu';return;}const data={android:[`🤖 ${L('android')}`,state.language==='en'?['1) Install Hiddify or V2Box.','2) Copy your subscription link.','3) Add the Subscription in the app.','4) Update and Connect.']:['۱) Hiddify یا V2Box را نصب کن.','۲) لینک اشتراک را کپی کن.','۳) داخل برنامه Subscription را اضافه کن.','۴) Update و Connect کن.']],ios:[` ${L('ios')}`,state.language==='en'?['1) Install Hiddify or V2Box.','2) Copy the subscription link.','3) Import it into the app.','4) Update and Connect.']:['۱) Hiddify یا V2Box را نصب کن.','۲) لینک اشتراک را کپی کن.','۳) لینک را داخل برنامه Import کن.','۴) Update و Connect کن.']],windows:[`▣ ${L('windows')}`,state.language==='en'?['1) Install Hiddify or v2rayN.','2) Copy your subscription link.','3) Import Subscription.','4) Update and connect.']:['۱) Hiddify یا v2rayN را نصب کن.','۲) لینک Subscription را کپی کن.','۳) Import Subscription را بزن.','۴) Update و اتصال را فعال کن.']]};if(data[a])openModal(`<h2>${data[a][0]}</h2><ol>${data[a][1].map(x=>`<li>${x}</li>`).join('')}</ol><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}
 document.addEventListener('click',e=>{const actionBtn=e.target.closest('[data-action]');if(actionBtn)action(actionBtn.dataset.action);const nav=e.target.closest('[data-page]');if(nav)navigate(nav.dataset.page);});
