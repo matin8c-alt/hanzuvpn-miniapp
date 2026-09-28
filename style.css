@@ -230,3 +230,5 @@ html,body{
 .link-row .link-box{flex:1;min-width:0;}
 .copy-link{flex:0 0 46px;width:46px;min-height:80px;border-radius:10px;background:#e1f4fc;color:#147fad;font-size:18px;border:1px solid #bfe3f3;}
 .copy-link:active{transform:scale(.96)}
+.receipt-preview-wrap{margin:12px 0 14px}.receipt-preview-title{font-size:13px;opacity:.72;margin-bottom:7px}.receipt-preview{min-height:18px;border:1px dashed rgba(255,255,255,.16);border-radius:12px;padding:8px;text-align:center;overflow:hidden}.receipt-preview:empty{display:none}.receipt-preview-image{display:block;width:100%;max-height:320px;object-fit:contain;border-radius:10px;margin:0 auto}
+.receipt-preview-wrap{margin:12px 0 14px}.receipt-preview-title{font-size:13px;opacity:.72;margin-bottom:7px}.receipt-preview{min-height:18px;border:1px dashed rgba(255,255,255,.16);border-radius:12px;padding:8px;text-align:center;overflow:hidden}.receipt-preview:empty{display:none}.receipt-preview-image{display:block;width:100%;max-height:320px;object-fit:contain;border-radius:10px;margin:0 auto}
