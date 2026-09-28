@@ -26,7 +26,7 @@ const I18N = {
 function L(k){ return (I18N[state.language]||I18N.fa)[k] || I18N.fa[k] || k; }
 const money = n => new Intl.NumberFormat(state.language==='en'?'en-US':'fa-IR').format(Number(n||0)) + (state.language==='en'?' Toman':' تومان');
 function showToast(text){const el=$('#toast');el.textContent=text;el.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>el.classList.remove('show'),2600);}
-function openModal(html){$('#modal-content').innerHTML=html;modal.hidden=false;}
+function openModal(html){$('#modal-content').innerHTML=html;document.querySelectorAll('.modal-close').forEach(el=>el.remove());modal.hidden=false;}
 function closeModal(){modal.hidden=true;}
 function clearReceiptPreviewUrl(){
   if(window.__receiptPreviewUrl){try{URL.revokeObjectURL(window.__receiptPreviewUrl);}catch(e){} window.__receiptPreviewUrl='';}
