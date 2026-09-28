@@ -1,6 +1,6 @@
 const tg = window.Telegram?.WebApp;
 const API_BASE = 'https://hanzuvpn-bot-production.up.railway.app';
-const API_VERSION = '20260928-v7';
+const API_VERSION = '20260928-v8';
 const $ = s => document.querySelector(s);
 let state = { balance: 0, plans: [], services: [], history: [], user: null, support: 'https://t.me/ByHxnzu', language: 'fa' };
 const modal = $('#modal');
@@ -43,7 +43,52 @@ window.openCharge=()=>openModal(`<h2>${L('charge_title')}</h2><p>${L('min')}: ۱
 window.createCharge=async()=>{const amount=Number($('#charge-amount')?.value||0);if(amount<10000){showToast(L('min')+': ۱۰,۰۰۰ تومان');return;}try{showToast(L('creating'));const data=await api('/api/charge',{method:'POST',body:JSON.stringify({amount})});const card=data.card||data.card_number||data.payment_card||'';const orderId=data.order_id??data.order??'';state.chargeAmount=amount;openModal(`<h2>${L('payment')}</h2><p>${L('amount')}: <b>${money(amount)}</b></p><p>${L('order_no')}: <b>#${escapeHtml(orderId)}</b></p>${card?`<p>${L('card')}:</p><div class="card-number"><span>${escapeHtml(card)}</span><button class="copy-card" onclick="copyCard('${escapeHtml(card)}')" aria-label="${L('copy')}">📋</button></div>`:'<p>Card number unavailable.</p>'}<p class="hint">${L('receipt_hint')}</p><input id="receipt-file" type="file" accept="image/*"><button class="modal-action" onclick="sendReceipt(${Number(orderId)||0})">${L('send_receipt')}</button>`);}catch(e){openModal(`<h2>❌ ${L('buy_fail')}</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}};
 window.copyServiceLink=async btn=>{const link=String(btn?.dataset?.link||'');if(!link)return;try{await navigator.clipboard.writeText(link);}catch(e){const ta=document.createElement('textarea');ta.value=link;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}showToast(L('copy'));};
 window.copyCard=async card=>{try{await navigator.clipboard.writeText(String(card));showToast(L('copied'));}catch(e){const ta=document.createElement('textarea');ta.value=card;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();showToast(L('copied'));}};
-window.sendReceipt=async orderId=>{const file=$('#receipt-file')?.files?.[0];if(!file){showToast(L('pick_receipt'));return;}if(!orderId){showToast(L('invalid_order'));return;}try{showToast(L('sending'));const reader=new FileReader();reader.onload=async()=>{try{const result=await api('/api/charge-receipt',{method:'POST',body:JSON.stringify({order_id:orderId,amount:Number(state.chargeAmount||0),image:String(reader.result),filename:file.name})});openModal(`<h2>✅ ${L('receipt_ok')}</h2><p>${L('receipt_sent')} #${escapeHtml(result.order_id??orderId)}</p><p>${L('after_approve')}</p><button class="modal-action" onclick="refreshData(true)">${L('refresh_balance')}</button>`);}catch(e){openModal(`<h2>❌ ${L('receipt_fail')}</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}};reader.readAsDataURL(file);}catch(e){showToast(errorText(e));}};
+async function readReceiptImage(file){
+  return await new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(String(reader.result||''));
+    reader.onerror=()=>reject(new Error('file_read_error'));
+    reader.onabort=()=>reject(new Error('file_read_error'));
+    reader.readAsDataURL(file);
+  });
+}
+async function prepareReceiptImage(file){
+  const raw=await readReceiptImage(file);
+  try{
+    const img=new Image();
+    const loaded=new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;});
+    img.src=raw;
+    await loaded;
+    const maxSide=1600;
+    const scale=Math.min(1,maxSide/Math.max(img.naturalWidth||img.width||1,img.naturalHeight||img.height||1));
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.max(1,Math.round((img.naturalWidth||img.width)*scale));
+    canvas.height=Math.max(1,Math.round((img.naturalHeight||img.height)*scale));
+    const ctx=canvas.getContext('2d');
+    if(!ctx) return raw;
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    const compressed=canvas.toDataURL('image/jpeg',0.82);
+    return compressed&&compressed.length<raw.length?compressed:raw;
+  }catch(e){
+    return raw;
+  }
+}
+window.sendReceipt=async orderId=>{
+  const file=$('#receipt-file')?.files?.[0];
+  const btn=document.querySelector('#modal-content .modal-action');
+  if(!file){showToast(L('pick_receipt'));return;}
+  if(!orderId){showToast(L('invalid_order'));return;}
+  setButtonBusy(btn,true);
+  try{
+    showToast(L('sending'));
+    const image=await prepareReceiptImage(file);
+    const result=await api('/api/charge-receipt',{method:'POST',body:JSON.stringify({order_id:orderId,amount:Number(state.chargeAmount||0),image,filename:file.name})});
+    openModal(`<h2>✅ ${L('receipt_ok')}</h2><p>${L('receipt_sent')} #${escapeHtml(result.order_id??orderId)}</p><p>${L('after_approve')}</p><button class="modal-action" onclick="refreshData(true)">${L('refresh_balance')}</button>`);
+  }catch(e){
+    setButtonBusy(btn,false);
+    openModal(`<h2>❌ ${L('receipt_fail')}</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);
+  }
+};
 async function showServices(){try{const data=await api('/api/services');state.services=data.services||[];renderServices();if(!state.services.length){openModal(`<h2>${L('services_title')}</h2><p>${L('no_services')}</p>`);return;}const list=state.services.map(s=>`<div class="service-list glass"><b>📦 ${escapeHtml(s.volume)} ${state.language==='en'?'GB':'گیگ'}</b><p>${L('order')} #${escapeHtml(s.id)}<br>${state.language==='en'?'Expires':'انقضا'}: ${escapeHtml(s.expires_at||'-')}</p>${s.link?`<div class="link-row"><textarea readonly class="link-box">${escapeHtml(s.link)}</textarea><button class="copy-link" onclick="copyServiceLink(this)" data-link="${escapeHtml(s.link)}" aria-label="${L('copy')}">📋</button></div>`:''}<button class="modal-action" onclick="renewService(${Number(s.id)})">${L('renew')}</button></div>`).join('');openModal(`<h2>${L('services_title')}</h2>${list}`);}catch(e){openModal(`<h2>❌ ${L('close')}</h2><p>${escapeHtml(errorText(e))}</p>`);}}
 window.showServices=showServices;
 window.renewService=async orderId=>{try{showToast(L('renewing'));const data=await api('/api/renew',{method:'POST',body:JSON.stringify({order_id:orderId})});state.balance=Number(data.balance??data.new_balance??state.balance);updateHeader();const link=data.link?`<p><b>${L('link')}:</b></p><div class="link-row"><textarea readonly class="link-box">${escapeHtml(data.link)}</textarea><button class="copy-link" onclick="copyServiceLink(this)" data-link="${escapeHtml(data.link)}" aria-label="${L('copy')}">📋</button></div>`:'';openModal(`<h2>✅ ${L('renew_ok')}</h2><p>${L('renew_done')}</p><p>${L('new_balance')}: <b>${money(state.balance)}</b></p>${link}<button class="modal-action" onclick="closeModal()">${L('ok')}</button>`);await refreshData(false);}catch(e){openModal(`<h2>❌ ${L('renew_fail')}</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}};
