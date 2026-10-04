@@ -1,5 +1,5 @@
 const tg = window.Telegram?.WebApp;
-const API_BASE = 'https://hanzuvpn-bot-production.up.railway.app';
+const API_BASE = 'https://hanzu.rzk26.site/hanzuvpn';
 const API_VERSION = '20261002-manual-unlimited';
 const $ = s => document.querySelector(s);
 let state = { balance: 0, plans: [], services: [], history: [], user: null, support: 'https://t.me/ByHxnzu', language: 'fa' };
