@@ -1,4 +1,26 @@
+// Access gate: the Mini App UI is available only inside Telegram with initData.
 const tg = window.Telegram?.WebApp;
+if (!tg || typeof tg.initData !== 'string' || !tg.initData.trim()) {
+  document.documentElement.innerHTML = `<!doctype html>
+  <html lang="fa" dir="rtl"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="theme-color" content="#171715">
+    <title>HanzuVPN</title>
+    <style>
+      *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#171715;color:#f5f2e8;font-family:Arial,sans-serif;text-align:center}
+      .card{max-width:380px;padding:30px 24px;border:1px solid #49432c;border-radius:22px;background:#22221d;box-shadow:0 20px 60px #0005}
+      .logo{width:76px;height:76px;object-fit:cover;border-radius:22px;margin-bottom:16px}
+      h1{font-size:22px;margin:0 0 12px}p{font-size:15px;line-height:2;color:#c9c5b6;margin:0}
+      .hint{margin-top:18px;color:#e6bd45;font-size:13px}
+    </style></head><body><main class="card">
+      <img class="logo" src="logo.webp" alt="HANZU">
+      <h1>هانزو VPN</h1>
+      <p>این مینی‌اپ فقط از داخل تلگرام قابل استفاده است.</p>
+      <p class="hint">برای ورود، به ربات هانزو برگرد و دکمه مینی‌اپ را بزن.</p>
+    </main></body></html>`;
+  throw new Error('HanzuVPN Mini App must be opened from Telegram.');
+}
 const API_BASE = 'https://hanzu.rzk26.site/hanzuvpn';
 const API_VERSION = '20261009-premium-v1';
 const $ = s => document.querySelector(s);
