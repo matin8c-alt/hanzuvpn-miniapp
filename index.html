@@ -5,15 +5,74 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171714">
   <meta name="color-scheme" content="dark">
+  <meta name="robots" content="noindex,nofollow">
+  <style>
+    body:not(.telegram-authorized) #loader, body:not(.telegram-authorized) .ambient, body:not(.telegram-authorized) #app, body:not(.telegram-authorized) #modal, body:not(.telegram-authorized) #toast { display:none !important; }
+    #telegram-only-gate { display:none; min-height:100dvh; box-sizing:border-box; padding:28px; align-items:center; justify-content:center; text-align:center; background:#171714; color:#f4f1e8; font-family:Vazirmatn, sans-serif; }
+    body:not(.telegram-authorized) #telegram-only-gate { display:flex; }
+    #telegram-only-gate .gate-card { max-width:360px; border:1px solid #38382e; border-radius:24px; padding:28px 22px; background:#20201b; }
+    #telegram-only-gate img { width:82px; height:82px; object-fit:contain; margin-bottom:14px; }
+    #telegram-only-gate h1 { font-size:22px; margin:0 0 10px; }
+    #telegram-only-gate p { color:#c3c0b4; line-height:1.9; margin:0; font-size:14px; }
+  </style>
   <title>HanzuVPN — Premium Network</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20261009-control-deck-v2">
+  <link rel="stylesheet" href="style.css?v=20261010-black-red-v2">
+  <!-- HanzuVPN fixed mobile navigation: inline fallback prevents stale CSS/cache conflicts -->
+  <style id="hanzu-bottom-nav-emergency-fix">
+    html, body { width:100%; max-width:100%; margin:0; overflow-x:hidden; }
+    #app > nav.bottom {
+      position:fixed !important;
+      left:8px !important; right:8px !important;
+      bottom:calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+      width:auto !important; max-width:none !important; min-width:0 !important;
+      margin:0 !important; transform:none !important; translate:none !important;
+      box-sizing:border-box !important; display:grid !important;
+      grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+      gap:2px !important; padding:5px 4px !important;
+      overflow:hidden !important; z-index:1000 !important;
+    }
+    #app > nav.bottom > button.nav {
+      display:flex !important; flex-direction:column !important;
+      align-items:center !important; justify-content:center !important;
+      width:100% !important; min-width:0 !important; max-width:100% !important;
+      margin:0 !important; padding:5px 0 !important;
+      box-sizing:border-box !important; overflow:hidden !important;
+      justify-self:stretch !important; transform:none !important;
+    }
+    #app > nav.bottom > button.nav small {
+      display:block !important; width:100% !important; min-width:0 !important;
+      max-width:100% !important; white-space:nowrap !important;
+      text-align:center !important; overflow:hidden !important;
+      font-size:clamp(6px,2.1vw,9px) !important; letter-spacing:0 !important;
+    }
+    #app > nav.bottom > button.nav-plus span {
+      width:26px !important; height:26px !important; flex-basis:26px !important;
+    }
+    @media(max-width:360px) {
+      #app > nav.bottom { left:5px !important; right:5px !important; padding:4px 2px !important; gap:1px !important; }
+      #app > nav.bottom > button.nav span { font-size:17px !important; }
+      #app > nav.bottom > button.nav small { font-size:6px !important; }
+    }
+  </style>
+
   <link rel="preload" as="image" href="logo.webp?v=20261005-yellow-gray-v8">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
+  <div id="telegram-only-gate" role="status" aria-live="polite"><div class="gate-card"><img src="logo.webp" alt="HANZU"><h1>هانزو فقط داخل تلگرام</h1><p>برای استفاده از مینی‌اپ، از دکمه ورود در ربات رسمی هانزو داخل تلگرام استفاده کن.</p></div></div>
+  <script>
+    (function(){
+      try {
+        var webApp = window.Telegram && window.Telegram.WebApp;
+        if (webApp && typeof webApp.initData === "string" && webApp.initData.length > 0) {
+          document.body.classList.add("telegram-authorized");
+        }
+      } catch (_) {}
+    })();
+  </script>
   <div id="loader" class="loader-screen">
     <div class="loader-orbit"><img src="logo.webp?v=20261005-yellow-gray-v8" class="loader-logo" alt="HANZU"></div>
     <div class="loader-name">HANZU<span>VPN</span></div>
@@ -88,6 +147,6 @@
 
   <div class="modal-backdrop" id="modal" hidden><div class="modal" role="dialog" aria-modal="true"><button class="modal-close" id="modal-close">×</button><div id="modal-content"></div></div></div>
   <div class="toast" id="toast"></div>
-  <script src="app.js?v=20261009-telegram-gate-v1"></script>
+  <script src="app.js?v=20261010-black-red-v2"></script>
 </body>
 </html>

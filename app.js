@@ -1,28 +1,6 @@
-// Access gate: the Mini App UI is available only inside Telegram with initData.
 const tg = window.Telegram?.WebApp;
-if (!tg || typeof tg.initData !== 'string' || !tg.initData.trim()) {
-  document.documentElement.innerHTML = `<!doctype html>
-  <html lang="fa" dir="rtl"><head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="theme-color" content="#171715">
-    <title>HanzuVPN</title>
-    <style>
-      *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#171715;color:#f5f2e8;font-family:Arial,sans-serif;text-align:center}
-      .card{max-width:380px;padding:30px 24px;border:1px solid #49432c;border-radius:22px;background:#22221d;box-shadow:0 20px 60px #0005}
-      .logo{width:76px;height:76px;object-fit:cover;border-radius:22px;margin-bottom:16px}
-      h1{font-size:22px;margin:0 0 12px}p{font-size:15px;line-height:2;color:#c9c5b6;margin:0}
-      .hint{margin-top:18px;color:#e6bd45;font-size:13px}
-    </style></head><body><main class="card">
-      <img class="logo" src="logo.webp" alt="HANZU">
-      <h1>هانزو VPN</h1>
-      <p>این مینی‌اپ فقط از داخل تلگرام قابل استفاده است.</p>
-      <p class="hint">برای ورود، به ربات هانزو برگرد و دکمه مینی‌اپ را بزن.</p>
-    </main></body></html>`;
-  throw new Error('HanzuVPN Mini App must be opened from Telegram.');
-}
 const API_BASE = 'https://hanzu.rzk26.site/hanzuvpn';
-const API_VERSION = '20261009-premium-v1';
+const API_VERSION = '20261009-live-circle-v1';
 const $ = s => document.querySelector(s);
 let state = { balance: 0, plans: [], services: [], history: [], user: null, card: '', support: 'https://t.me/ByHxnzu', language: localStorage.getItem('hanzu_lang') || 'fa' };
 const faNum = n => Number(n||0).toLocaleString('fa-IR');
@@ -79,6 +57,9 @@ const EXTRA_I18N = {
   }
 };
 Object.keys(EXTRA_I18N).forEach(lang=>Object.assign(I18N[lang], EXTRA_I18N[lang]));
+Object.assign(I18N.fa,{total_traffic:'حجم کل',usage_unavailable:'دادهٔ مصرف از پنل دریافت نشد',usage_auto_refresh:'به‌روزرسانی خودکار هر ۶۰ ثانیه'});
+Object.assign(I18N.en,{total_traffic:'Total volume',usage_unavailable:'Usage data unavailable from panel',usage_auto_refresh:'Auto-refresh every 60 seconds'});
+Object.assign(I18N.ku,{total_traffic:'کۆی قەبارە',usage_unavailable:'زانیاری بەکارهێنان لە پانێڵ بەردەست نییە',usage_auto_refresh:'نوێکردنەوەی خۆکار هەر ٦٠ چرکە'});
 function L(k){ return (I18N[state.language]||I18N.fa)[k] || I18N.fa[k] || k; }
 const money = n => new Intl.NumberFormat(state.language==='en'?'en-US':state.language==='ku'?'ku-Arab':'fa-IR').format(Number(n||0)) + ' '+L('toman');
 function showToast(text){const el=$('#toast');el.textContent=text;el.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>el.classList.remove('show'),2600);}
@@ -188,15 +169,55 @@ function formatTraffic(bytes){
 function serviceUsageMarkup(s){
   const status=String(s.panel_status||'').toLowerCase();
   const statusText=status==='active'?L('status_active'):(s.panel_status||'');
+  const unlimited=String(s.volume||'').toUpperCase().startsWith('UNLIMITED_');
   let html='';
-  if(s.usage_available && s.data_limit!==undefined && s.data_limit!==null){
-    if(Number(s.data_limit)>0){
-      const used=Number(s.used_traffic||0), limit=Number(s.data_limit||0), remaining=Math.max(0,Number(s.remaining??(limit-used)));
-      const pct=limit?Math.max(0,Math.min(100,used/limit*100)):0;
-      html+=`<div class="service-usage"><div class="service-usage-row"><span>${L('used_traffic')}: ${formatTraffic(used)}</span><span>${L('remaining_traffic')}: ${formatTraffic(remaining)}</span></div><div class="service-usage-track"><i style="width:${pct.toFixed(1)}%"></i></div></div>`;
-    }else if(String(s.volume||'').toUpperCase().startsWith('UNLIMITED_')){
-      html+=`<div class="service-usage"><div class="service-usage-row"><span>${L('used_traffic')}: ${formatTraffic(s.used_traffic||0)}</span><span>${L('remaining_traffic')}: ${L('unlimited_data')}</span></div></div>`;
-    }
+  const usageAvailable=Boolean(s.usage_available);
+  const limit=Number(s.data_limit||0);
+  const used=Math.max(0,Number(s.used_traffic||0));
+
+  if(unlimited){
+    const angle=usageAvailable?360:0;
+    html+=`<div class="service-usage">
+      <div class="service-usage-main">
+        <div class="usage-ring usage-ring-unlimited" style="--usage-angle:${angle}deg" role="img" aria-label="${escapeHtml(L('unlimited_data'))}">
+          <div class="usage-ring-center"><strong>∞</strong><small>${L('unlimited_data')}</small></div>
+        </div>
+        <div class="usage-details">
+          ${usageAvailable?`<div class="usage-stat-row"><span>${L('used_traffic')}</span><strong>${formatTraffic(used)}</strong></div>`:''}
+          <div class="usage-note">${usageAvailable?L('unlimited_data'):L('usage_unavailable')}</div>
+        </div>
+      </div>
+      <div class="usage-auto-note">${L('usage_auto_refresh')}</div>
+    </div>`;
+  }else if(usageAvailable && limit>0){
+    const remaining=Math.max(0,Math.min(limit,Number(s.remaining??(limit-used))));
+    const remainPct=Math.max(0,Math.min(100,remaining/limit*100));
+    const roundedPct=Math.round(remainPct);
+    const angle=(remainPct*3.6).toFixed(2);
+    const pctText=Number(roundedPct).toLocaleString(state.language==='fa'?'fa-IR':state.language==='ku'?'ku-Arab':'en-US')+(state.language==='fa'?'٪':'%');
+    html+=`<div class="service-usage">
+      <div class="service-usage-main">
+        <div class="usage-ring" style="--usage-angle:${angle}deg" role="img" aria-label="${L('remaining_traffic')} ${pctText}">
+          <div class="usage-ring-center"><strong>${pctText}</strong><small>${L('remaining_traffic')}</small></div>
+        </div>
+        <div class="usage-details">
+          <div class="usage-stat-row"><span>${L('remaining_traffic')}</span><strong class="usage-remaining">${formatTraffic(remaining)}</strong></div>
+          <div class="usage-stat-row"><span>${L('used_traffic')}</span><strong>${formatTraffic(used)}</strong></div>
+          <div class="usage-stat-row"><span>${L('total_traffic')}</span><strong>${formatTraffic(limit)}</strong></div>
+        </div>
+      </div>
+      <div class="usage-auto-note">${L('usage_auto_refresh')}</div>
+    </div>`;
+  }else{
+    html+=`<div class="service-usage">
+      <div class="service-usage-main">
+        <div class="usage-ring usage-ring-unavailable" style="--usage-angle:0deg" role="img" aria-label="${L('usage_unavailable')}">
+          <div class="usage-ring-center"><strong>—</strong><small>${L('remaining_traffic')}</small></div>
+        </div>
+        <div class="usage-details"><div class="usage-note">${L('usage_unavailable')}</div></div>
+      </div>
+      <div class="usage-auto-note">${L('usage_auto_refresh')}</div>
+    </div>`;
   }
   if(statusText)html+=`<div class="service-panel-status">${L('panel_status')}: <b>${escapeHtml(statusText)}</b></div>`;
   return html;
@@ -214,7 +235,7 @@ function renderServices(){
     box.innerHTML=`<div class="empty-service"><div class="empty-icon">⌁</div><strong>${L('no_service')}</strong><p>${L('no_service_sub')}</p><button class="outline-red" data-action="buy">${L('empty_buy')}</button></div>`;
     return;
   }
-  box.innerHTML=services.slice(0,4).map(s=>`<div class="service-item">
+  box.innerHTML=services.map(s=>`<div class="service-item">
     <div class="service-row"><div><div class="service-volume">${serviceLabel(s)}</div><div class="service-meta">${L('order')} #${escapeHtml(s.id)} · ${L('expires')}: ${escapeHtml(s.live_expire||s.expires_at||'-')}</div></div><div class="stat-icon green">✓</div></div>
     ${serviceUsageMarkup(s)}
     <button class="service-refresh" onclick="refreshLiveUsage()"><span>↻</span> تازه‌سازی مصرف لحظه‌ای</button>
@@ -249,7 +270,36 @@ window.setCustomVolume=value=>{const input=$('#custom-volume-input');const n=Mat
 window.confirmCustomVolume=orderId=>{const gb=Math.max(1,Math.min(500,Math.round(Number(window.__customVolume)||5)));const price=volumePrice(gb);if(orderId){closeModal();doCustomRenew(Number(orderId),gb);}else{paymentModal(String(gb),price,true,`${gb} ${L('gb')} · حجم دلخواه`);}};
 window.doCustomRenew=async(orderId,gb)=>{const price=volumePrice(gb);try{showToast('در حال ثبت حجم و تمدید سرویس...');const data=await api('/api/renew-volume',{method:'POST',body:JSON.stringify({order_id:Number(orderId),additional_gb:Number(gb)})});state.balance=Number(data.balance??data.new_balance??state.balance);if(data.services)state.services=data.services;await refreshData(false);openModal(`<h2>✅ تمدید موفق</h2><p>${gb} گیگابایت به سرویس اضافه شد و اعتبار آن تمدید شد.</p><p>مبلغ: <b>${money(data.price??price)}</b></p><p>موجودی جدید: <b>${money(state.balance)}</b></p><button class="modal-action" onclick="closeModal()">${L('ok')}</button>`);}catch(e){openModal(`<h2>❌ تمدید انجام نشد</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action secondary-action" onclick="closeModal()">${L('close')}</button>`);}};
 window.openRenewChooser=async()=>{try{const data=await api('/api/services');state.services=data.services||[];renderServices();if(!state.services.length){openModal(`<h2>مدیریت و تمدید سرویس</h2><p>${L('no_services')}</p><button class="modal-action" onclick="closeModal();navigate('buy')">خرید سرویس</button>`);return;}const cards=state.services.map(s=>`<div class="renew-choice"><div><b>${serviceLabel(s)}</b><small>سفارش #${escapeHtml(s.id)} · ${escapeHtml(s.live_expire||s.expires_at||'-')}</small></div><button class="modal-action" onclick="closeModal();renewService(${Number(s.id)})">تمدید ۳۰ روزه</button>${s.usage_available && Number(s.data_limit)>0 && !String(s.volume||'').toUpperCase().startsWith('UNLIMITED_')?`<button class="custom-renew-btn" onclick="showCustomVolume(5,${Number(s.id)})">＋ تمدید با حجم دلخواه</button>`:''}</div>`).join('');openModal(`<h2>مدیریت و تمدید سرویس</h2><p>سرویس موردنظرت را انتخاب کن.</p>${cards}`);}catch(e){openModal(`<h2>❌ ${L('close')}</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}};
-window.refreshLiveUsage=async()=>{const btns=document.querySelectorAll('.service-refresh');btns.forEach(b=>{b.disabled=true;b.classList.add('is-loading');});try{const data=await api('/api/services');state.services=data.services||[];renderServices();showToast(state.language==='en'?'Live usage refreshed':state.language==='ku'?'بەکارهاتوو نوێکرایەوە':'مصرف لحظه‌ای به‌روز شد');}catch(e){showToast(errorText(e)||L('network'));}finally{document.querySelectorAll('.service-refresh').forEach(b=>{b.disabled=false;b.classList.remove('is-loading');});}};
+window.refreshLiveUsage=async(silent=false)=>{
+  if(window.__hanzuUsageLoading)return;
+  window.__hanzuUsageLoading=true;
+  const btns=document.querySelectorAll('.service-refresh');
+  btns.forEach(b=>{b.disabled=true;b.classList.add('is-loading');});
+  try{
+    const data=await api('/api/services');
+    state.services=data.services||[];
+    window.__hanzuUsageLastRefresh=Date.now();
+    renderServices();
+    if(!silent)showToast(state.language==='en'?'Live usage refreshed':state.language==='ku'?'بەکارهاتوو نوێکرایەوە':'مصرف لحظه‌ای به‌روز شد');
+  }catch(e){if(!silent)showToast(errorText(e)||L('network'));}
+  finally{
+    window.__hanzuUsageLoading=false;
+    document.querySelectorAll('.service-refresh').forEach(b=>{b.disabled=false;b.classList.remove('is-loading');});
+  }
+};
+if(window.__hanzuUsageInterval)clearInterval(window.__hanzuUsageInterval);
+window.__hanzuUsageInterval=setInterval(()=>{
+  if(document.visibilityState!=='hidden' && state.services && state.services.length && !window.__hanzuUsageLoading){
+    window.refreshLiveUsage(true);
+  }
+},60000);
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible' && state.services && state.services.length &&
+     Date.now()-(window.__hanzuUsageLastRefresh||0)>60000 && !window.__hanzuUsageLoading){
+    window.refreshLiveUsage(true);
+  }
+});
+
 function paymentModal(volume,price,custom=false,label=''){const isUnlimited=String(volume).toUpperCase().startsWith('UNLIMITED_');const title=label||(isUnlimited?String(volume):`${escapeHtml(volume)} ${L('gb')}`);openModal(`<h2>${L('buy_title')} ${title}</h2><p>${L('valid')}</p><p><b>${L('amount')}: ${money(price)}</b></p><p>${L('wallet_balance')}: <b>${money(state.balance)}</b></p><button class="modal-action" onclick="doBuy('${escapeHtml(String(volume))}')">${L('pay_wallet')}</button><button class="modal-action" onclick="openDirectPurchase('${escapeHtml(String(volume))}',${Number(price)})">${L('direct_pay')}</button><button class="modal-action secondary-action" onclick="${custom?`showCustomVolume(5)`:`closeModal();refreshData(false)`}">${L('back')}</button>`);}
 function buyConfirm(volume){const key=String(volume);const raw=state.plans.find(x=>String(x.volume??x.gb)===key);if(!raw){openModal(`<h2>❌ ${L('buy_fail')}</h2><p>${L('no_stock')}</p><button class="modal-action secondary-action" onclick="closeModal()">${L('close')}</button>`);return;}const price=Number(raw.price)||0;paymentModal(key,price,false,raw.kind==='unlimited'?planLabel(raw):'');}
 window.openDirectPurchase=async(volume,price)=>{clearReceiptPreviewUrl();const raw=state.plans.find(x=>String(x.volume??x.gb)===String(volume));const label=raw?.kind==='unlimited'?planLabel(raw):(raw?planLabel(raw):String(volume));openModal(`<h2>${L('direct_pay')}</h2><p>${label}</p><p>${L('amount')}: <b>${money(price)}</b></p>${state.card?`<p>${L('card')}:</p><div class="card-number"><span>${escapeHtml(state.card)}</span><button class="copy-card" onclick="copyCard('${escapeHtml(state.card)}')" aria-label="${L('copy')}">📋</button></div>`:''}<p class="hint">${L('direct_hint')}</p><input id="purchase-receipt-file" type="file" accept="image/*"><div class="receipt-preview-wrap"><div class="receipt-preview-title">${L('receipt_preview')}</div><div id="purchase-receipt-preview" class="receipt-preview"></div></div><button class="modal-action" onclick="sendPurchaseReceipt('${escapeHtml(String(volume))}',${Number(price)})">📸 ${L('send_receipt')}</button><button class="modal-action secondary-action" onclick="paymentModal('${escapeHtml(String(volume))}',${Number(price)},false,'${escapeHtml(label)}')">${L('back')}</button>`);attachReceiptPreview('purchase-receipt-file','purchase-receipt-preview');};window.__receiptWatchTimer=null;
@@ -325,7 +375,7 @@ window.sendReceipt=async orderId=>{
 function serviceLabel(s){if(s?.volume&&String(s.volume).toUpperCase().startsWith('UNLIMITED_')){const p=state.plans.find(x=>String(x.volume)===String(s.volume));return escapeHtml(p?planLabel(p):('♾️ '+String(s.volume)));}return `📦 ${escapeHtml(s.volume)} ${L('gb')}`;}
 async function showServices(){try{const data=await api('/api/services');state.services=data.services||[];renderServices();if(!state.services.length){openModal(`<h2>${L('services_title')}</h2><p>${L('no_services')}</p>`);return;}const list=state.services.map(s=>`<div class="service-item"><b>${serviceLabel(s)}</b><p>${L('order')} #${escapeHtml(s.id)}<br>${L('expires')}: ${escapeHtml(s.live_expire||s.expires_at||'-')}</p>${serviceUsageMarkup(s)}<button class="service-refresh" onclick="refreshLiveUsage()"><span>↻</span> تازه‌سازی مصرف لحظه‌ای</button>${s.link?`<div class="link-row"><textarea readonly class="link-box">${escapeHtml(s.link)}</textarea><button class="copy-link" onclick="copyServiceLink(this)" data-link="${escapeHtml(s.link)}" aria-label="${L('copy')}">📋</button></div>`:''}<div class="service-actions"><button class="modal-action" onclick="renewService(${Number(s.id)})">${L('renew')}</button>${s.usage_available && Number(s.data_limit)>0 && !String(s.volume||'').toUpperCase().startsWith('UNLIMITED_')?`<button class="custom-renew-btn" onclick="showCustomVolume(5,${Number(s.id)})">＋ تمدید با حجم دلخواه</button>`:''}</div></div>`).join('');openModal(`<h2>${L('services_title')}</h2>${list}`);}catch(e){openModal(`<h2>❌ ${L('close')}</h2><p>${escapeHtml(errorText(e))}</p>`);}}window.showServices=showServices;
 window.renewService=async orderId=>{try{showToast(L('renewing'));const data=await api('/api/renew',{method:'POST',body:JSON.stringify({order_id:orderId})});state.balance=Number(data.balance??data.new_balance??state.balance);updateHeader();const link=data.link?`<p><b>${L('link')}:</b></p><div class="link-row"><textarea readonly class="link-box">${escapeHtml(data.link)}</textarea><button class="copy-link" onclick="copyServiceLink(this)" data-link="${escapeHtml(data.link)}" aria-label="${L('copy')}">📋</button></div>`:'';openModal(`<h2>✅ ${L('renew_ok')}</h2><p>${L('renew_done')}</p><p>${L('new_balance')}: <b>${money(state.balance)}</b></p>${link}<button class="modal-action" onclick="closeModal()">${L('ok')}</button>`);await refreshData(false);}catch(e){openModal(`<h2>❌ ${L('renew_fail')}</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}};
-async function refreshData(show=true){try{const data=await api('/api/bootstrap');state={...state,...data,balance:Number(data.balance||0),plans:data.plans||data.tariffs||FALLBACK_PLANS,services:data.services||[],history:data.history||[],language:localStorage.getItem('hanzu_lang')||data.language||state.language||'fa'};applyLanguage();updateHeader();renderPlans();renderServices();if(show)showToast(L('refresh'));}catch(e){console.error(e);if(!state.plans.length)state.plans=FALLBACK_PLANS;applyLanguage();renderPlans();renderServices();if(show)showToast(errorText(e)||L('network'));}}
+async function refreshData(show=true){try{const data=await api('/api/bootstrap');window.__hanzuUsageLastRefresh=Date.now();state={...state,...data,balance:Number(data.balance||0),plans:data.plans||data.tariffs||FALLBACK_PLANS,services:data.services||[],history:data.history||[],language:localStorage.getItem('hanzu_lang')||data.language||state.language||'fa'};applyLanguage();updateHeader();renderPlans();renderServices();if(show)showToast(L('refresh'));}catch(e){console.error(e);if(!state.plans.length)state.plans=FALLBACK_PLANS;applyLanguage();renderPlans();renderServices();if(show)showToast(errorText(e)||L('network'));}}
 window.refreshData=refreshData;
 function setupTelegram(){if(!tg){showToast('Telegram Mini App');return;}tg.ready();tg.expand();try{tg.setHeaderColor('#1b1b18');tg.setBackgroundColor('#171715');}catch(e){}}
 function navigate(page){document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===page));if(page==='home')window.scrollTo({top:0,behavior:'smooth'});if(page==='services')showServices();if(page==='buy')$('#plans-panel').scrollIntoView({behavior:'smooth',block:'start'});if(page==='help')$('#help-panel').scrollIntoView({behavior:'smooth',block:'start'});if(page==='wallet')walletModal();if(page==='profile')profileModal();}
@@ -356,3 +406,14 @@ setTimeout(()=>{$('#loader').classList.add('hide');$('#app').hidden=false},150);
 const motionStyle=document.createElement('style');motionStyle.textContent=`
 .service-usage{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);font-size:12px}.service-usage-row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.service-usage-track{height:5px;margin-top:8px;border-radius:99px;background:rgba(255,255,255,.10);overflow:hidden}.service-usage-track i{display:block;height:100%;border-radius:99px;background:#e6bd45}.service-panel-status{margin-top:7px;font-size:12px;opacity:.82}button{position:relative;overflow:hidden}.ripple{position:absolute;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);transform:translate(-50%,-50%) scale(1);animation:ripple .6s ease-out forwards;pointer-events:none}.btn-spinner{display:inline-block;width:13px;height:13px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;margin-inline:3px;animation:spin .7s linear infinite}.is-loading{opacity:.82;pointer-events:none}@keyframes ripple{to{transform:translate(-50%,-50%) scale(30);opacity:0}}
 `;document.head.appendChild(motionStyle);
+
+
+// Hanzu Black/Red v2: Telegram haptic feedback on interactive taps.
+(()=>{
+  if(window.__hanzuHapticsV2) return; window.__hanzuHapticsV2=true;
+  document.addEventListener('click',(ev)=>{
+    const el=ev.target?.closest?.('button,[role="button"],.nav,.clickable');
+    if(!el || el.disabled || el.getAttribute('aria-disabled')==='true') return;
+    try{ const webApp=window.Telegram?.WebApp; webApp?.HapticFeedback?.selectionChanged?.(); }catch(_){}
+  },{passive:true});
+})();
