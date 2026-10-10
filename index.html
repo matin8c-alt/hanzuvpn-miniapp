@@ -1,152 +1,69 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#171714">
-  <meta name="color-scheme" content="dark">
-  <meta name="robots" content="noindex,nofollow">
-  <style>
-    body:not(.telegram-authorized) #loader, body:not(.telegram-authorized) .ambient, body:not(.telegram-authorized) #app, body:not(.telegram-authorized) #modal, body:not(.telegram-authorized) #toast { display:none !important; }
-    #telegram-only-gate { display:none; min-height:100dvh; box-sizing:border-box; padding:28px; align-items:center; justify-content:center; text-align:center; background:#171714; color:#f4f1e8; font-family:Vazirmatn, sans-serif; }
-    body:not(.telegram-authorized) #telegram-only-gate { display:flex; }
-    #telegram-only-gate .gate-card { max-width:360px; border:1px solid #38382e; border-radius:24px; padding:28px 22px; background:#20201b; }
-    #telegram-only-gate img { width:82px; height:82px; object-fit:contain; margin-bottom:14px; }
-    #telegram-only-gate h1 { font-size:22px; margin:0 0 10px; }
-    #telegram-only-gate p { color:#c3c0b4; line-height:1.9; margin:0; font-size:14px; }
-  </style>
-  <title>HanzuVPN — Premium Network</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20261010-black-red-v2">
-  <!-- HanzuVPN fixed mobile navigation: inline fallback prevents stale CSS/cache conflicts -->
-  <style id="hanzu-bottom-nav-emergency-fix">
-    html, body { width:100%; max-width:100%; margin:0; overflow-x:hidden; }
-    #app > nav.bottom {
-      position:fixed !important;
-      left:8px !important; right:8px !important;
-      bottom:calc(8px + env(safe-area-inset-bottom, 0px)) !important;
-      width:auto !important; max-width:none !important; min-width:0 !important;
-      margin:0 !important; transform:none !important; translate:none !important;
-      box-sizing:border-box !important; display:grid !important;
-      grid-template-columns:repeat(5,minmax(0,1fr)) !important;
-      gap:2px !important; padding:5px 4px !important;
-      overflow:hidden !important; z-index:1000 !important;
-    }
-    #app > nav.bottom > button.nav {
-      display:flex !important; flex-direction:column !important;
-      align-items:center !important; justify-content:center !important;
-      width:100% !important; min-width:0 !important; max-width:100% !important;
-      margin:0 !important; padding:5px 0 !important;
-      box-sizing:border-box !important; overflow:hidden !important;
-      justify-self:stretch !important; transform:none !important;
-    }
-    #app > nav.bottom > button.nav small {
-      display:block !important; width:100% !important; min-width:0 !important;
-      max-width:100% !important; white-space:nowrap !important;
-      text-align:center !important; overflow:hidden !important;
-      font-size:clamp(6px,2.1vw,9px) !important; letter-spacing:0 !important;
-    }
-    #app > nav.bottom > button.nav-plus span {
-      width:26px !important; height:26px !important; flex-basis:26px !important;
-    }
-    @media(max-width:360px) {
-      #app > nav.bottom { left:5px !important; right:5px !important; padding:4px 2px !important; gap:1px !important; }
-      #app > nav.bottom > button.nav span { font-size:17px !important; }
-      #app > nav.bottom > button.nav small { font-size:6px !important; }
-    }
-  </style>
-
-  <link rel="preload" as="image" href="logo.webp?v=20261005-yellow-gray-v8">
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>حنزو وی‌پی‌ان | Hanzu VPN</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="telegram-only-gate" role="status" aria-live="polite"><div class="gate-card"><img src="logo.webp" alt="HANZU"><h1>هانزو فقط داخل تلگرام</h1><p>برای استفاده از مینی‌اپ، از دکمه ورود در ربات رسمی هانزو داخل تلگرام استفاده کن.</p></div></div>
-  <script>
-    (function(){
-      try {
-        var webApp = window.Telegram && window.Telegram.WebApp;
-        if (webApp && typeof webApp.initData === "string" && webApp.initData.length > 0) {
-          document.body.classList.add("telegram-authorized");
-        }
-      } catch (_) {}
-    })();
-  </script>
-  <div id="loader" class="loader-screen">
-    <div class="loader-orbit"><img src="logo.webp?v=20261005-yellow-gray-v8" class="loader-logo" alt="HANZU"></div>
-    <div class="loader-name">HANZU<span>VPN</span></div>
-    <div class="loader-text">در حال آماده‌سازی فضای اختصاصی شما...</div>
-    <div class="loader-line"><i></i></div>
-  </div>
-  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div><div class="ambient-grid"></div>
 
-  <main class="app" id="app" hidden>
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-mark"><img src="logo.webp?v=20261005-yellow-gray-v8" alt="HanzuVPN"></div>
-        <div class="brand-copy"><strong>HANZU<span>VPN</span></strong><small id="hello">پنل کاربری</small></div>
-      </div>
-      <div class="top-actions"><span class="secure-pill"><i></i> SECURE</span><button class="icon-btn" id="refresh" aria-label="بروزرسانی">↻</button></div>
+    <header class="ios-header">
+        <div class="header-title">حنزو وی‌پی‌ان ⚡️</div>
+        <div class="user-status-badge" id="userStatus">اشتراک فعال</div>
     </header>
 
-    <section class="welcome">
-      <div><div class="welcome-kicker">YOUR PRIVATE NETWORK</div><div class="welcome-title">سلام، <span id="welcome-name">کاربر</span></div><div class="welcome-sub" id="welcome-sub">به تجربه اختصاصی هانزو خوش آمدی</div></div>
-      <div class="welcome-emblem"><div class="emblem-ring">H</div><span>PREMIUM</span></div>
-    </section>
+    <main class="ios-content">
+        
+        <section class="ios-card subscription-card">
+            <div class="card-icon">🛡️</div>
+            <div class="card-info">
+                <h3>وضعیت حساب شما</h3>
+                <p id="daysRemaining">در حال بارگذاری اطلاعات...</p>
+            </div>
+        </section>
 
-    <section class="wallet-card">
-      <div class="wallet-shine"></div><div class="wallet-top"><div><span class="eyebrow">موجودی کیف پول</span><div class="balance" id="balance">۰ تومان</div><div class="wallet-caption"><i></i> حساب کاربری هانزو</div></div><div class="wallet-symbol"><span>₮</span><b>H</b></div></div>
-      <div class="wallet-divider"></div>
-      <div class="wallet-actions"><button class="secondary-action-btn" data-action="wallet-history"><span>↶</span> تراکنش‌ها</button><button class="primary" data-action="wallet"><span>＋</span> افزایش موجودی <i>↗</i></button></div>
-    </section>
+        <h2 class="section-title">خرید اشتراک جدید</h2>
+        <div class="plans-container" id="plansContainer">
+            <div class="ios-card plan-card" onclick="selectPlan('1')">
+                <div class="plan-header">
+                    <span class="plan-name">اشتراک ۱ ماهه</span>
+                    <span class="plan-price">۱۹۹,۰۰۰ تومان</span>
+                </div>
+                <p class="plan-desc">حجم ۳۰ گیگابایت - سرعت نامحدود</p>
+            </div>
+            <div class="ios-card plan-card popular" onclick="selectPlan('3')">
+                <div class="badge-popular">پیشنهاد ویژه</div>
+                <div class="plan-header">
+                    <span class="plan-name">اشتراک ۳ ماهه</span>
+                    <span class="plan-price">۴۹۹,۰۰۰ تومان</span>
+                </div>
+                <p class="plan-desc">حجم ۱۰۰ گیگابایت - پرسرعت‌ترین سرورها</p>
+            </div>
+        </div>
 
-    <section class="quick-grid">
-      <button class="quick quick-buy" data-action="buy"><span class="quick-icon">↗</span><b>خرید سرویس</b><small>پلن‌های ویژه</small></button>
-      <button class="quick quick-renew" data-action="renew"><span class="quick-icon">⟳</span><b>تمدید سرویس</b><small>بدون دردسر</small></button>
-      <button class="quick quick-volume" data-action="volume"><span class="quick-icon">◉</span><b>حجم دلخواه</b><small>انتخاب آزاد</small></button>
-      <button class="quick quick-support" data-action="support"><span class="quick-icon">✦</span><b>پشتیبانی</b><small>همیشه کنار تو</small></button>
-    </section>
+        <div class="action-container">
+            <button class="ios-button primary" onclick="handlePurchase()">پرداخت و دریافت کانفیگ</button>
+        </div>
 
-    <section class="stats-grid">
-      <div class="stat-card"><div class="stat-icon green">✓</div><div><small>سرویس‌های من</small><strong id="active-count">۰</strong><span>اشتراک ثبت‌شده</span></div><div class="stat-spark">⌁</div></div>
-      <div class="stat-card"><div class="stat-icon gold">◉</div><div><small>حجم کل</small><strong id="total-volume">۰ GB</strong><span>مجموع پلن‌های حجمی</span></div><div class="stat-spark">↗</div></div>
-    </section>
+    </main>
 
-    <section class="section" data-section="home" id="plans-panel">
-      <div class="section-head"><div><div class="section-kicker">CHOOSE YOUR POWER</div><h2>فروشگاه سرویس‌ها</h2><span>پلن مناسب خودت رو انتخاب کن</span></div><button class="link-btn" data-action="buy">همه پلن‌ها <b>←</b></button></div>
-      <div class="subsection-title"><span><i class="mini-icon">▦</i> سرویس‌های حجمی</span><small>۳۰ روزه</small></div>
-      <div class="plans" id="monthly-plans"></div>
-      <div class="subsection-title unlimited-title"><span><i class="mini-icon infinity">∞</i> سرویس‌های نامحدود</span><small>۳۰ روزه</small></div>
-      <div class="plans" id="unlimited-plans"></div>
-    </section>
-
-    <section class="section" id="services-panel">
-      <div class="section-head"><div><div class="section-kicker">LIVE CONTROL CENTER</div><h2>سرویس‌های فعال</h2><span>وضعیت و مصرف اشتراک‌ها</span></div><button class="link-btn" data-action="services">مشاهده همه <b>←</b></button></div>
-      <div id="service-list"><div class="empty-service"><div class="empty-icon">⌁</div><strong>هنوز سرویسی نداری</strong><p>اولین سرویس خودت رو فعال کن و تجربه هانزو رو شروع کن.</p><button class="outline-red" data-action="buy">＋ خرید اولین سرویس</button></div></div>
-    </section>
-
-    <section class="section info-section" id="help-panel">
-      <div class="section-head"><div><div class="section-kicker">GET CONNECTED</div><h2>راهنمای اتصال</h2><span>در چند قدم کوتاه آنلاین شو</span></div></div>
-      <div class="os-grid">
-        <button class="os-card" data-action="android"><span>◈</span><b>Android</b><small>Hiddify • V2Box • v2rayNG</small><i>↗</i></button>
-        <button class="os-card" data-action="ios"><span>⌘</span><b>iPhone / iOS</b><small>Hiddify • V2Box • Streisand</small><i>↗</i></button>
-        <button class="os-card" data-action="windows"><span>▣</span><b>Windows</b><small>Hiddify • v2rayN</small><i>↗</i></button>
-      </div>
-    </section>
-
-    <div class="footer-signature"><span>H</span><div><b>HANZU NETWORK</b><small>PRIVATE. FAST. YOURS.</small></div><i></i></div>
-    <nav class="bottom" aria-label="منوی اصلی">
-      <button class="nav active" data-page="home"><span>⌂</span><small>خانه</small></button>
-      <button class="nav" data-page="services"><span>◫</span><small>سرویس‌ها</small></button>
-      <button class="nav nav-plus" data-page="buy"><span>＋</span><small>خرید</small></button>
-      <button class="nav" data-page="wallet"><span>▣</span><small>کیف پول</small></button>
-      <button class="nav" data-page="profile"><span>◉</span><small>پروفایل</small></button>
+    <nav class="ios-tabbar">
+        <div class="tab-item active" onclick="switchTab(this, 'home')">
+            <span class="tab-icon">🏠</span>
+            <span class="tab-label">خانه</span>
+        </div>
+        <div class="tab-item" onclick="switchTab(this, 'configs')">
+            <span class="tab-item-icon">⚙️</span>
+            <span class="tab-label">اشتراک‌ها</span>
+        </div>
+        <div class="tab-item" onclick="switchTab(this, 'support')">
+            <span class="tab-item-icon">💬</span>
+            <span class="tab-label">پشتیبانی</span>
+        </div>
     </nav>
-  </main>
 
-  <div class="modal-backdrop" id="modal" hidden><div class="modal" role="dialog" aria-modal="true"><button class="modal-close" id="modal-close">×</button><div id="modal-content"></div></div></div>
-  <div class="toast" id="toast"></div>
-  <script src="app.js?v=20261010-black-red-v2"></script>
+    <script src="app.js"></script>
 </body>
 </html>
