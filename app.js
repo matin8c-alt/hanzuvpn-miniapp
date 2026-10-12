@@ -19,14 +19,7 @@ const FALLBACK_PLANS = [
   {volume:'30',price:105000}, {volume:'40',price:140000}, {volume:'50',price:175000}, {volume:'100',price:350000},
   {volume:'UNLIMITED_1',price:150000,kind:'unlimited',label_fa:'تک کاربره',label_en:'Single User',label_ku:'یەک بەکارهێنەر'},
   {volume:'UNLIMITED_2',price:250000,kind:'unlimited',label_fa:'دو کاربره',label_en:'Two Users',label_ku:'دوو بەکارهێنەر'},
-  {volume:'UNLIMITED_3',price:350000,kind:'unlimited',label_fa:'سه کاربره',label_en:'Three Users',label_ku:'سێ بەکارهێنەر'},
-  {volume:'VIP1',price:7000,kind:'vip',gb:1,label_fa:'تانل (VIP) - 1 گیگ',label_en:'Tunnel (VIP) - 1 GB',label_ku:'تانل (VIP) - 1 گیگ'},
-  {volume:'VIP5',price:35000,kind:'vip',gb:5,label_fa:'تانل (VIP) - 5 گیگ',label_en:'Tunnel (VIP) - 5 GB',label_ku:'تانل (VIP) - 5 گیگ'},
-  {volume:'VIP10',price:70000,kind:'vip',gb:10,label_fa:'تانل (VIP) - 10 گیگ',label_en:'Tunnel (VIP) - 10 GB',label_ku:'تانل (VIP) - 10 گیگ'},
-  {volume:'VIP15',price:105000,kind:'vip',gb:15,label_fa:'تانل (VIP) - 15 گیگ',label_en:'Tunnel (VIP) - 15 GB',label_ku:'تانل (VIP) - 15 گیگ'},
-  {volume:'VIP20',price:140000,kind:'vip',gb:20,label_fa:'تانل (VIP) - 20 گیگ',label_en:'Tunnel (VIP) - 20 GB',label_ku:'تانل (VIP) - 20 گیگ'},
-  {volume:'VIP30',price:210000,kind:'vip',gb:30,label_fa:'تانل (VIP) - 30 گیگ',label_en:'Tunnel (VIP) - 30 GB',label_ku:'تانل (VIP) - 30 گیگ'},
-  {volume:'VIP50',price:350000,kind:'vip',gb:50,label_fa:'تانل (VIP) - 50 گیگ',label_en:'Tunnel (VIP) - 50 GB',label_ku:'تانل (VIP) - 50 گیگ'}
+  {volume:'UNLIMITED_3',price:350000,kind:'unlimited',label_fa:'سه کاربره',label_en:'Three Users',label_ku:'سێ بەکارهێنەر'}
 ];
 const modal = $('#modal');
 const LOGO_SRC = 'logo.webp?v=20261005-yellow-gray-v8';
@@ -153,17 +146,17 @@ function applyLanguage(){
   if(guideSmall[0])guideSmall[0].textContent='Hiddify • V2Box • v2rayNG'; if(guideSmall[1])guideSmall[1].textContent='Hiddify • V2Box • Streisand'; if(guideSmall[2])guideSmall[2].textContent='Hiddify • v2rayN';
 }
 
-function planLabel(p){if(p?.kind==='unlimited'){const key=String(p.volume||'');const labels=state.language==='en'?p.label_en:state.language==='ku'?p.label_ku:p.label_fa;return '♾️ '+(labels||key);}if(p?.kind==='vip'){const labels=state.language==='en'?p.label_en:state.language==='ku'?p.label_ku:p.label_fa;return '🌐 '+escapeHtml(labels||p.volume);}const gb=p?.gb??p?.volume;return `${escapeHtml(gb)} ${L('gb')}`;}
+function planLabel(p){if(p?.kind==='unlimited'){const key=String(p.volume||'');const labels=state.language==='en'?p.label_en:state.language==='ku'?p.label_ku:p.label_fa;return '♾️ '+(labels||key);}const gb=p?.gb??p?.volume;return `${escapeHtml(gb)} ${L('gb')}`;}
 function planKey(p){return String(p?.volume??p?.gb??'');}
 function renderPlans(){
   const plans=(state.plans?.length?state.plans:FALLBACK_PLANS).map(x=>({...x,gb:x.gb??x.volume}));
-  const monthly=plans.filter(p=>p.kind!=='unlimited' && p.kind!=='vip');
+  const monthly=plans.filter(p=>p.kind!=='unlimited');
   const unlimited=plans.filter(p=>p.kind==='unlimited');
-  const vip=plans.filter(p=>p.kind==='vip');
-  const monthlyBox=$('#monthly-plans'), unlimitedBox=$('#unlimited-plans'), vipBox=$('#vip-plans');
+  const monthlyBox=$('#monthly-plans'), unlimitedBox=$('#unlimited-plans');
   const planCard=p=>{
     const key=planKey(p), hot=[10,30].includes(Number(p.gb));
-    const available=p.kind==='unlimited' && p.available===false;
+    // Do not disable unlimited plans from the Mini App using a possibly stale stock flag. The bot/API validates real purchase availability.
+    const available=false;
     return `<article class="plan ${hot?'hot':''}">
       ${hot?`<span class="badge">${L('popular')}</span>`:''}
       <h3>${planLabel(p)}</h3><p>${L('valid')}</p>
@@ -173,7 +166,6 @@ function renderPlans(){
   };
   if(monthlyBox) monthlyBox.innerHTML=monthly.map(planCard).join('')+`<article class="plan"><h3>${L('custom')}</h3><p>${L('valid')}</p><div class="price">${L('custom_prompt')}</div><button class="buy" data-custom="1">${L('custom')}</button></article>`;
   if(unlimitedBox) unlimitedBox.innerHTML=unlimited.map(planCard).join('');
-  if(vipBox) vipBox.innerHTML=vip.map(planCard).join('');
   document.querySelectorAll('[data-buy]').forEach(b=>b.addEventListener('click',()=>buyConfirm(b.dataset.buy)));
   document.querySelector('[data-custom]')?.addEventListener('click',()=>showCustomVolume(5));
 }
@@ -391,7 +383,7 @@ window.sendReceipt=async orderId=>{
     openModal(`<h2>❌ ${L('receipt_fail')}</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);
   }
 };
-function serviceLabel(s){if(s?.volume&&(String(s.volume).toUpperCase().startsWith('UNLIMITED_')||String(s.volume).toUpperCase().startsWith('VIP'))){const p=state.plans.find(x=>String(x.volume)===String(s.volume));return escapeHtml(p?planLabel(p):(String(s.volume).toUpperCase().startsWith('VIP')?'🌐 تانل (VIP)':'♾️ '+String(s.volume)));}return `📦 ${escapeHtml(s.volume)} ${L('gb')}`;}
+function serviceLabel(s){if(s?.volume&&String(s.volume).toUpperCase().startsWith('UNLIMITED_')){const p=state.plans.find(x=>String(x.volume)===String(s.volume));return escapeHtml(p?planLabel(p):('♾️ '+String(s.volume)));}return `📦 ${escapeHtml(s.volume)} ${L('gb')}`;}
 async function showServices(){try{const data=await api('/api/services');state.services=data.services||[];renderServices();if(!state.services.length){openModal(`<h2>${L('services_title')}</h2><p>${L('no_services')}</p>`);return;}const list=state.services.map(s=>`<div class="service-item"><b>${serviceLabel(s)}</b><p>${L('order')} #${escapeHtml(s.id)}<br>${L('expires')}: ${escapeHtml(s.live_expire||s.expires_at||'-')}</p>${serviceUsageMarkup(s)}<button class="service-refresh" onclick="refreshLiveUsage()"><span>↻</span> تازه‌سازی مصرف لحظه‌ای</button>${s.link?`<div class="link-row"><textarea readonly class="link-box">${escapeHtml(s.link)}</textarea><button class="copy-link" onclick="copyServiceLink(this)" data-link="${escapeHtml(s.link)}" aria-label="${L('copy')}">📋</button></div>`:''}<div class="service-actions"><button class="modal-action" onclick="renewService(${Number(s.id)})">${L('renew')}</button>${s.usage_available && Number(s.data_limit)>0 && !String(s.volume||'').toUpperCase().startsWith('UNLIMITED_')?`<button class="custom-renew-btn" onclick="showCustomVolume(5,${Number(s.id)})">＋ تمدید با حجم دلخواه</button>`:''}</div></div>`).join('');openModal(`<h2>${L('services_title')}</h2>${list}`);}catch(e){openModal(`<h2>❌ ${L('close')}</h2><p>${escapeHtml(errorText(e))}</p>`);}}window.showServices=showServices;
 window.renewService=async orderId=>{try{showToast(L('renewing'));const data=await api('/api/renew',{method:'POST',body:JSON.stringify({order_id:orderId})});state.balance=Number(data.balance??data.new_balance??state.balance);updateHeader();const link=data.link?`<p><b>${L('link')}:</b></p><div class="link-row"><textarea readonly class="link-box">${escapeHtml(data.link)}</textarea><button class="copy-link" onclick="copyServiceLink(this)" data-link="${escapeHtml(data.link)}" aria-label="${L('copy')}">📋</button></div>`:'';openModal(`<h2>✅ ${L('renew_ok')}</h2><p>${L('renew_done')}</p><p>${L('new_balance')}: <b>${money(state.balance)}</b></p>${link}<button class="modal-action" onclick="closeModal()">${L('ok')}</button>`);await refreshData(false);}catch(e){openModal(`<h2>❌ ${L('renew_fail')}</h2><p>${escapeHtml(errorText(e))}</p><button class="modal-action" onclick="closeModal()">${L('close')}</button>`);}};
 async function refreshData(show=true){try{const data=await api('/api/bootstrap');window.__hanzuUsageLastRefresh=Date.now();state={...state,...data,balance:Number(data.balance||0),plans:data.plans||data.tariffs||FALLBACK_PLANS,services:data.services||[],history:data.history||[],language:localStorage.getItem('hanzu_lang')||data.language||state.language||'fa'};applyLanguage();updateHeader();renderPlans();renderServices();if(show)showToast(L('refresh'));}catch(e){console.error(e);if(!state.plans.length)state.plans=FALLBACK_PLANS;applyLanguage();renderPlans();renderServices();if(show)showToast(errorText(e)||L('network'));}}
