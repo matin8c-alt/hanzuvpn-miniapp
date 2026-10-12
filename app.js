@@ -46,21 +46,21 @@ const I18N = {
 const EXTRA_I18N = {
   fa: {
     welcome_sub:'به پنل کاربری خود خوش آمدید', wallet_history:'تراکنش‌ها', quick_buy:'خرید سرویس', quick_renew:'تمدید', quick_volume:'حجم اضافه', quick_support:'پشتیبانی',
-    active_services:'سرویس فعال', total_volume:'حجم کل', plans_title:'خرید اشتراک', plans_sub:'پلن‌های موجود', monthly_title:'📦 سرویس‌های حجمی', unlimited_title:'♾️ سرویس‌های نامحدود',
+    active_services:'سرویس فعال', total_volume:'حجم کل', plans_title:'خرید اشتراک', plans_sub:'پلن‌های موجود', monthly_title:'📦 سرویس‌های حجمی', vip_title:'⚡ تانل (VIP)', unlimited_title:'♾️ سرویس‌های نامحدود',
     all:'مشاهده همه', plan_days:'۳۰ روزه', services_status:'وضعیت اشتراک‌ها', empty_buy:'＋ خرید اولین سرویس', guide_sub:'برای شروع اتصال', profile:'پروفایل', dashboard:'داشبورد',
     processing:'در حال پردازش...', expires:'انقضا', gb:'گیگ', toman:'تومان', card_unavailable:'شماره کارت در دسترس نیست.',sold_out:'ناموجود', invalid_volume_detail:'حجم سرویس نامعتبر است.', purchase_server_error:'خطای سرور خرید. لطفاً دوباره تلاش کن.',
     min_charge_text:'حداقل مبلغ شارژ', language_changed:'زبان تغییر کرد', used_traffic:'مصرف‌شده', remaining_traffic:'باقی‌مانده', panel_status:'وضعیت', unlimited_data:'نامحدود', status_active:'فعال'
   },
   en: {
     welcome_sub:'Welcome to your user panel', wallet_history:'Transactions', quick_buy:'Buy Service', quick_renew:'Renew', quick_volume:'Extra Volume', quick_support:'Support',
-    active_services:'Active services', total_volume:'Total volume', plans_title:'Buy Subscription', plans_sub:'Available plans', monthly_title:'📦 Volume Services', unlimited_title:'♾️ Unlimited Services',
+    active_services:'Active services', total_volume:'Total volume', plans_title:'Buy Subscription', plans_sub:'Available plans', monthly_title:'📦 Volume Services', vip_title:'⚡ VIP Tunnel', unlimited_title:'♾️ Unlimited Services',
     all:'View all', plan_days:'30 days', services_status:'Subscription status', empty_buy:'＋ Buy your first service', guide_sub:'Get started with your connection', profile:'Profile', dashboard:'Dashboard',
     processing:'Processing...', expires:'Expires', gb:'GB', toman:'Toman', card_unavailable:'Card number unavailable.',sold_out:'Unavailable', invalid_volume_detail:'Invalid service volume.', purchase_server_error:'Purchase server error. Please try again.',
     min_charge_text:'Minimum charge', language_changed:'Language changed', used_traffic:'Used', remaining_traffic:'Remaining', panel_status:'Status', unlimited_data:'Unlimited', status_active:'Active'
   },
   ku: {
     welcome_sub:'بەخێربێیت بۆ پەڕەی بەکارهێنەرەکەت', wallet_history:'مامەڵەکان', quick_buy:'کڕینی خزمەتگوزاری', quick_renew:'نوێکردنەوە', quick_volume:'قەبارەی زیادە', quick_support:'پشتگیری',
-    active_services:'خزمەتگوزارییە چالاکەکان', total_volume:'کۆی قەبارە', plans_title:'کڕینی خزمەتگوزاری', plans_sub:'پلانی بەردەست', monthly_title:'📦 خزمەتگوزارییە قەبارەییەکان', unlimited_title:'♾️ خزمەتگوزارییە بێ سنوورەکان',
+    active_services:'خزمەتگوزارییە چالاکەکان', total_volume:'کۆی قەبارە', plans_title:'کڕینی خزمەتگوزاری', plans_sub:'پلانی بەردەست', monthly_title:'📦 خزمەتگوزارییە قەبارەییەکان', vip_title:'⚡ VIP', unlimited_title:'♾️ خزمەتگوزارییە بێ سنوورەکان',
     all:'هەمووی ببینە', plan_days:'٣٠ ڕۆژ', services_status:'دۆخی بەشداریکردن', empty_buy:'＋ یەکەم خزمەتگوزاری بکڕە', guide_sub:'بۆ دەستپێکردنی بەستن', profile:'پرۆفایل', dashboard:'داشبۆرد',
     processing:'لە پرۆسەدایە...', expires:'بەسەرچوون', gb:'گیگ', toman:'تۆمان', card_unavailable:'ژمارەی کارت بەردەست نییە.',sold_out:'بەردەست نییە', invalid_volume_detail:'قەبارەی خزمەتگوزاری نادروستە.', purchase_server_error:'هەڵەی سێرڤەری کڕین. تکایە دووبارە هەوڵ بدەرەوە.',
     min_charge_text:'کەمترین بڕی شارژ', language_changed:'زمان گۆڕدرا', used_traffic:'بەکارهاتوو', remaining_traffic:'ماوە', panel_status:'دۆخ', unlimited_data:'بێ سنوور', status_active:'چالاک'
@@ -134,7 +134,7 @@ function applyLanguage(){
   const stats=document.querySelectorAll('.stats-grid .stat-card small');
   if(stats[0])stats[0].textContent=L('active_services'); if(stats[1])stats[1].textContent=L('total_volume');
   const subTitles=document.querySelectorAll('.subsection-title span');
-  if(subTitles[0])subTitles[0].textContent=L('monthly_title'); if(subTitles[1])subTitles[1].textContent=L('unlimited_title');
+  if(subTitles[0])subTitles[0].textContent=L('monthly_title'); if(subTitles[1])subTitles[1].textContent=L('vip_title'); if(subTitles[2])subTitles[2].textContent=L('unlimited_title');
   document.querySelectorAll('.subsection-title small').forEach(x=>x.textContent=L('plan_days'));
   const os=document.querySelectorAll('.os-card');
   if(os.length>=3){os[0].querySelector('b').textContent=L('android');os[1].querySelector('b').textContent=L('ios');os[2].querySelector('b').textContent=L('windows');}
@@ -148,11 +148,17 @@ function applyLanguage(){
 
 function planLabel(p){if(p?.kind==='unlimited'){const key=String(p.volume||'');const labels=state.language==='en'?p.label_en:state.language==='ku'?p.label_ku:p.label_fa;return '♾️ '+(labels||key);}const gb=p?.gb??p?.volume;return `${escapeHtml(gb)} ${L('gb')}`;}
 function planKey(p){return String(p?.volume??p?.gb??'');}
+function isVipPlan(p){
+  const tags=[p?.kind,p?.category,p?.service_type,p?.panel,p?.panel_name,p?.group,p?.profile,p?.label,p?.label_fa,p?.label_en,p?.name,p?.name_fa,p?.name_en,p?.volume]
+    .filter(v=>v!==undefined&&v!==null).join(' ').toLowerCase();
+  return /vip|وی.?آی.?پی|تانل|tunnel|panel[_ -]?3|third[_ -]?panel/.test(tags) || Number(p?.price_per_gb||p?.gb_price||0)===7000;
+}
 function renderPlans(){
   const plans=(state.plans?.length?state.plans:FALLBACK_PLANS).map(x=>({...x,gb:x.gb??x.volume}));
-  const monthly=plans.filter(p=>p.kind!=='unlimited');
-  const unlimited=plans.filter(p=>p.kind==='unlimited');
-  const monthlyBox=$('#monthly-plans'), unlimitedBox=$('#unlimited-plans');
+  const vip=plans.filter(p=>isVipPlan(p));
+  const monthly=plans.filter(p=>p.kind!=='unlimited'&&!isVipPlan(p));
+  const unlimited=plans.filter(p=>p.kind==='unlimited'&&!isVipPlan(p));
+  const monthlyBox=$('#monthly-plans'), vipBox=$('#vip-plans'), unlimitedBox=$('#unlimited-plans');
   const planCard=p=>{
     const key=planKey(p), hot=[10,30].includes(Number(p.gb));
     // Do not disable unlimited plans from the Mini App using a possibly stale stock flag. The bot/API validates real purchase availability.
@@ -165,6 +171,7 @@ function renderPlans(){
     </article>`;
   };
   if(monthlyBox) monthlyBox.innerHTML=monthly.map(planCard).join('')+`<article class="plan"><h3>${L('custom')}</h3><p>${L('valid')}</p><div class="price">${L('custom_prompt')}</div><button class="buy" data-custom="1">${L('custom')}</button></article>`;
+  if(vipBox) vipBox.innerHTML=vip.map(planCard).join('') || `<article class="plan"><h3>⚡ تانل (VIP)</h3><p>${state.language==='en'?'VIP plans will appear here when enabled by the server.':state.language==='ku'?'پلانی VIP لێرە دەردەکەون.':'پلن‌های VIP پس از فعال‌سازی در سرور اینجا نمایش داده می‌شوند.'}</p></article>`;
   if(unlimitedBox) unlimitedBox.innerHTML=unlimited.map(planCard).join('');
   document.querySelectorAll('[data-buy]').forEach(b=>b.addEventListener('click',()=>buyConfirm(b.dataset.buy)));
   document.querySelector('[data-custom]')?.addEventListener('click',()=>showCustomVolume(5));
